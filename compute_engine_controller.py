@@ -176,7 +176,9 @@ class ComputeEngineController(object):
                 'kind': 'compute#serviceAccount',
                 'email': 'default',
                 'scopes': [
-                    'https://www.googleapis.com/auth/devstorage.read_only'
+                    'https://www.googleapis.com/auth/devstorage.read_only',
+                    'https://www.googleapis.com/auth/userinfo.email',
+                    'https://www.googleapis.com/auth/datastore'
                 ]
             }
         ],
