@@ -1,0 +1,74 @@
+Only in gritsgame: .git
+diff -rwU3 gritsgame/src/client/index.html gritsgame.modified/src/client/index.html
+--- gritsgame/src/client/index.html	2013-03-12 15:07:50.133033000 -0700
++++ gritsgame.modified/src/client/index.html	2013-01-03 13:36:48.998438000 -0800
+@@ -234,7 +234,7 @@
+ 			
+ 
+             // Misc scripts
+-            gameURL+"/../socket.io/socket.io.js",
++            "./scripts/socket.io/socket.io.js",
+             gameURL+"/../protoize.js",
+ 			"../shared/core/loop.js"
+                           ];
+@@ -443,7 +443,7 @@
+ 					<img class='logo'  src='./img/blank.png'>
+ 					<img class='robot' src='./img/blank.png'>
+ 					<br>
+-					<a href='#' onclick='playSoundInstance("./sound/menu_select.ogg");goto_findGame(true)' onmouseover="playSoundInstance('./sound/menu_bump.ogg')"><img class='quick_game_btn' src='./img/blank.png' style='position:absolute;top:575px;left:175px;'></a>&nbsp;&nbsp;&nbsp;<a href='#' onclick='playSoundInstance("./sound/menu_select.ogg");dologin()' onmouseover="playSoundInstance('./sound/menu_bump.ogg')"><img src='./img/blank.png' class='login_btn' style='position:absolute;top:575px;left:475px;'></a>
++					<a href='#' onclick='playSoundInstance("./sound/menu_select.ogg");goto_findGame(true)' onmouseover="playSoundInstance('./sound/menu_bump.ogg')"><img class='quick_game_btn' src='./img/blank.png' style='position:absolute;top:575px;left:175px;'></a>&nbsp;&nbsp;&nbsp;<a href='#' onclick='playSoundInstance("./sound/menu_select.ogg");dologin()' onmouseover="playSoundInstance('./sound/menu_bump.ogg')"><img src='./img/blank.png' class='login_btn' style='position:absolute;top:575px;left:475px;display:none'></a>
+ 					
+ 					<div>
+ 					</div>
+diff -rwU3 gritsgame/src/client/scripts/pregame/menus.js gritsgame.modified/src/client/scripts/pregame/menus.js
+--- gritsgame/src/client/scripts/pregame/menus.js	2013-03-12 15:07:50.226029000 -0700
++++ gritsgame.modified/src/client/scripts/pregame/menus.js	2013-02-11 12:05:29.924565000 -0800
+@@ -34,7 +34,7 @@
+ 
+ var show_qrTile = function()
+ {
+-document.getElementById('pc_qrTile').style.display = "block";
++	// document.getElementById('pc_qrTile').style.display = "block";
+ }
+ 
+ var show_scoreTile = function()
+diff -rwU3 gritsgame/src/games-server/main.js gritsgame.modified/src/games-server/main.js
+--- gritsgame/src/games-server/main.js	2013-03-12 15:07:50.565908000 -0700
++++ gritsgame.modified/src/games-server/main.js	2013-01-07 11:08:10.312949000 -0800
+@@ -166,6 +166,12 @@
+     return count;
+   }
+ 
++  function recordNumPlayers() {
++    var numPlayersFile = fs.createWriteStream('/grits/num_players');
++    numPlayersFile.write('' + numPlayers() + '\n');
++    numPlayersFile.end();
++  }
++
+   var ticknum = 0;
+   var outgoing_tail = {};
+ 
+@@ -217,6 +223,7 @@
+         ent.sendUpdates();
+       }
+     }
++    recordNumPlayers();
+   }
+ 
+   // TODO return richer and more useful game state
+@@ -428,6 +435,7 @@
+       delete everyone[id];
+       myloop = null;
+       appeng.updateGameState(CONTROLLER_PORT, getGameState());
++      recordNumPlayers();
+     });
+   }
+ 
+@@ -465,6 +473,7 @@
+     if (isServerEntityName(ent.name)) {
+       broadcaster.q_unspawn({id:ent.name})
+     }
++    recordNumPlayers();
+   }
+   game.gGameEngine.setup(false);
+   game.enableLogging();
