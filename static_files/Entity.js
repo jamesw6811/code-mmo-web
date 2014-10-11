@@ -2,6 +2,8 @@ function Entity(id) {
 	if (id === undefined){
 		this.id = Entity.serverid*Entity.MACHINESHIFT + Entity.nextid*Entity.IDSHIFT;
 		Entity.nextid = Entity.nextid + 1;
+	} else {
+		this.id = id;
 	}
 	
     this.x = 0;
