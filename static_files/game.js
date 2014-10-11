@@ -157,6 +157,7 @@ function onNewEntity(data) {
   var newEntity = new Entity(data.id);
   newEntity.x = data.x;
   newEntity.y = data.y;
+  newEntity.graphic = data.graphic;
   
   entities.push(newEntity);
 };
@@ -173,6 +174,7 @@ function onMoveEntity(data) {
   // Update Entity position
   moveEntity.x = data.x;
   moveEntity.y = data.y;
+  moveEntity.graphic = data.graphic;
 };
 
 // Remove player
