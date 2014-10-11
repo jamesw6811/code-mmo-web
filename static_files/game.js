@@ -33,10 +33,10 @@ var playreqsuccess = 0
 function play() {
   setTimeout(function(){if(!playreqsuccess)alert("Failure requesting play server.")}, 5000);
   $.getJSON('/getip.json', function(json) {
-    playreqsuccess = 1
+    playreqsuccess = 1;
     if (json['ipaddress']) {
       init('http://' + json['ipaddress'] + ':8000');
-      animate()
+      animate();
     } else {
       alert('No Game Server Available.');
     }
@@ -77,7 +77,7 @@ function init(url) {
     startY = Math.round(Math.random()*(canvas.height-5));
 
   // Initialise the local player
-  localPlayer = new Player(startX, startY);
+  localPlayer = new Player();
 
   // Initialise socket connection
   socket = io.connect(url);
@@ -154,9 +154,10 @@ function onSocketDisconnect() {
 function onNewEntity(data) {
   console.log("New entity: "+data.id);
 
-  var newEntity = new Entity(data.x, data.y);
-  newEntity.id = data.id;
-
+  var newEntity = new Entity(data.id);
+  newEntity.x = data.x;
+  newEntity.y = data.y;
+  
   entities.push(newEntity);
 };
 
@@ -165,8 +166,7 @@ function onMoveEntity(data) {
 
   if (!moveEntity) {
     console.log("Entity not found: "+data.id);
-    moveEntity = new Entity(data.x, data.y);
-    moveEntity.id = data.id;
+    moveEntity = new Entity(data.id);
     entities.push(moveEntity);
   };
 

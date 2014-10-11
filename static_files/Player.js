@@ -3,12 +3,11 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
 Player.prototype = new Entity();
 Player.prototype.constructor=Player;
 function Player(){
-    this.x = 5;
-    this.y = 5;
+    Entity.call(this);
+	this.x = 100;
+	this.y = 100;
     this.graphic = 1;       
     this.moveAmount = 2;
-    this.id = Entity.nextid;
-    Entity.nextid = Entity.nextid + 1;
 }
 
 Player.prototype.updateKeys = function(keys) {
