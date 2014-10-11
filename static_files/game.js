@@ -78,9 +78,11 @@ function init(url) {
 
   // Initialise the local player
   localPlayer = new Player();
+  localPlayer.id = -1;
 
-  // Initialise remote players array
+  // Initialise array
   entities = [];
+  entities.push(localPlayer);
   
   // Initialise socket connection
   socket = io.connect(url);
@@ -174,7 +176,7 @@ function addEntity(data) {
     var ent = new Entity(data.id);
 	ent.updateFromEmit(data);
     entities.push(ent);
-	entities.sort(function(enta, entb){return enta.layer-entb.layer});
+	entities.sort(function(enta, entb){return entb.layer-enta.layer});
 }
 
 // Remove player
@@ -220,15 +222,17 @@ function update() {
 ** GAME DRAW
 **************************************************/
 function draw() {
+
   // Wipe the canvas clean
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  localPlayer.draw(ctx);
+  ctx.save();
+  ctx.translate(-localPlayer.x+canvas.width/2, -localPlayer.y+canvas.height/2);
 
   var i;
   for (i = 0; i < entities.length; i++) {
     entities[i].draw(ctx);
   };
+  ctx.restore();
 };
 
 
