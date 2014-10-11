@@ -6,7 +6,7 @@ function Entity(id) {
 	} else {
 		this.id = id;
 	}
-	
+	this.layer = 0;
     this.x = 0;
     this.y = 0;
     this.graphic = 0;
@@ -17,7 +17,20 @@ Entity.nextid = 0;
 Entity.GRAPHICS = {1 : '#000000', 3 : '#FF0000', 10000 : '#00FF00', 10001: '#22FF00'};
 
 Entity.prototype.getEmit = function(){
-	return {id: this.id, x: this.x, y: this.y, graphic: this.graphic};
+	return {id: this.id, x: this.x, y: this.y, graphic: this.graphic, layer: this.layer};
+}
+Entity.prototype.updateFromEmit(data){
+	this.x = data.x;
+	this.y = data.y;
+	this.graphic = data.graphic;
+	this.layer = data.layer;
+}
+Entity.makeFromEmit(data){
+	var ent = new Entity(data.id);
+	ent.x = data.x;
+	ent.y = data.y;
+	ent.graphic = data.graphic;
+	ent.layer = data.layer;
 }
 Entity.prototype.distanceSquaredTo = function(ent){
     var xdis = ent.x - this.x;

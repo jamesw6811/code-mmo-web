@@ -154,13 +154,7 @@ function onSocketDisconnect() {
 
 function onNewEntity(data) {
   console.log("New entity: "+data.id);
-
-  var newEntity = new Entity(data.id);
-  newEntity.x = data.x;
-  newEntity.y = data.y;
-  newEntity.graphic = data.graphic;
-  
-  entities.push(newEntity);
+	addEntity(data);
 };
 
 function onMoveEntity(data) {
@@ -168,15 +162,20 @@ function onMoveEntity(data) {
 
   if (!moveEntity) {
     console.log("Entity not found: "+data.id);
-    moveEntity = new Entity(data.id);
-    entities.push(moveEntity);
-  };
+	addEntity(data);
+  } else {
+	moveEntity.updateFromEmit(data);
+  }
 
   // Update Entity position
-  moveEntity.x = data.x;
-  moveEntity.y = data.y;
-  moveEntity.graphic = data.graphic;
 };
+
+function addEntity(data) {
+    var ent = new Entity(data.id);
+	ent.updateFromEmit(data);
+    entities.push(ent);
+	entities.sort(function(enta, entb){return enta.layer-entb.layer});
+}
 
 // Remove player
 function onRemoveEntity(data) {
