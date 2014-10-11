@@ -19,7 +19,7 @@ Entity.GRAPHICS = {1 : '#000000', 3 : '#FF0000', 10000 : '#00FF00', 10001: '#22F
 Entity.prototype.getEmit = function(){
 	return {id: this.id, x: this.x, y: this.y, graphic: this.graphic, layer: this.layer};
 }
-Entity.prototype.updateFromEmit(data){
+Entity.prototype.updateFromEmit = function(data){
 	this.x = data.x;
 	this.y = data.y;
 	this.graphic = data.graphic;
