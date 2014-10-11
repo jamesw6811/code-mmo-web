@@ -79,12 +79,13 @@ function init(url) {
   // Initialise the local player
   localPlayer = new Player();
 
+  // Initialise remote players array
+  entities = [];
+  
   // Initialise socket connection
   socket = io.connect(url);
   console.log("Initializing connection with "+url);
 
-  // Initialise remote players array
-  entities = [];
 
   // Start listening for events
   setEventHandlers();

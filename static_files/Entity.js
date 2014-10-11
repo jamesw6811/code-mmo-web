@@ -1,7 +1,7 @@
 // Entity is the super class for all graphical objects passed to client.
 function Entity(id) {
 	if (id === undefined){
-		this.id = Entity.serverid*Entity.MACHINESHIFT + Entity.nextid*Entity.IDSHIFT;
+		this.id = (Entity.serverid*Entity.MACHINESHIFT).toString(32) + ',' + (Entity.nextid*Entity.IDSHIFT).toString(32);
 		Entity.nextid = Entity.nextid + 1;
 	} else {
 		this.id = id;
