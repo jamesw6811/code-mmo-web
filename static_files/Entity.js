@@ -11,6 +11,8 @@ function Entity(id) {
     this.y = 0;
     this.graphic = 0;
 }
+Entity.Types = {};
+Entity.Types.Entity = Entity;
 Entity.MACHINESHIFT = 4294967296;
 Entity.IDSHIFT = 1;
 Entity.nextid = 0;
@@ -49,6 +51,24 @@ Entity.prototype.draw = function(ctx) {
 	ctx.strokeRect(this.x-10, this.y-10, 20, 20);
 };
 
+Entity.prototype.toDS = function() {
+	return {
+		__type: {stringValue: 'Entity'},
+		x: {integerValue: this.x},
+		y: {integerValue: this.y},
+		id: {stringValue: this.id},
+		layer: {integerValue: this.layer},
+		graphic: {integerValue: this.graphic}
+	};
+};
+Entity.fromDS = function(data){
+	var ent = new Entity(data.id.stringValue);
+	ent.x = data.x.integerValue;
+	ent.y = data.y.integerValue;
+	ent.layer = data.layer.integerValue;
+	ent.graphic = data.graphic.integerValue;
+	return ent;
+}
 
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
