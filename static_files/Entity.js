@@ -51,6 +51,7 @@ Entity.prototype.draw = function(ctx) {
 	ctx.strokeRect(this.x-10, this.y-10, 20, 20);
 };
 
+
 Entity.prototype.toDS = function() {
 	return {
 		__type: {stringValue: 'Entity'},
