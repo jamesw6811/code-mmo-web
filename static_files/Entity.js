@@ -14,7 +14,7 @@ function Entity(id) {
 Entity.MACHINESHIFT = 4294967296;
 Entity.IDSHIFT = 1;
 Entity.nextid = 0;
-Entity.GRAPHICS = {1 : '#000000', 3 : '#FF0000', 10000 : '#00FF00'};
+Entity.GRAPHICS = {1 : '#000000', 3 : '#FF0000', 10000 : '#00FF00', 10001: '#22FF00'};
 
 Entity.prototype.getEmit = function(){
 	return {id: this.id, x: this.x, y: this.y, graphic: this.graphic};
@@ -32,6 +32,8 @@ Entity.prototype.draw = function(ctx) {
 		ctx.fillStyle = g;
 	}
     ctx.fillRect(this.x-10, this.y-10, 20, 20);
+	ctx.fillStyle = "#888888";
+	ctx.strokeRect(this.x-10, this.y-10, 20, 20);
 };
 
 
