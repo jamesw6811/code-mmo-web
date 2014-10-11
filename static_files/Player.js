@@ -33,6 +33,7 @@ Player.prototype.updateKeys = function(keys) {
     };
 
 Player.prototype.draw = function(ctx) {
+		ctx.fillStyle = "#888888";
         ctx.fillRect(this.x-5, this.y-5, 10, 10);
     };
 
