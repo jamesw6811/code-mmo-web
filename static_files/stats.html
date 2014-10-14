@@ -11,13 +11,19 @@
     <div class="clear-both"></div>
 
     <div class="main-contents">
-      <p>Start server</p>
+      <div id="start">Start server</div><br><br>
+      <div id="teardown">Start server</div>
 
     <script>
-    $("p").click(function() {
+    $("#start").click(function() {
       $.get( "/startup", function( data ) {
       });
       alert( "Making new server." );
+    });
+    $("#teardown").click(function() {
+      $.get( "/teardown", function( data ) {
+      });
+      alert( "Stopping all servers." );
     });
     </script>
     </div>

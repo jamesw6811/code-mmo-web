@@ -1,21 +1,3 @@
-# Copyright 2013 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""AppEngine request handlers."""
-
-
-
 import logging
 import os
 
@@ -29,6 +11,7 @@ from compute_engine_controller import ComputeEngineController
 from load_info import LoadInfo
 
 from google.appengine.ext import db
+from google.appengine.api import app_identity
 
 
 jinja_environment = jinja2.Environment(
@@ -53,7 +36,7 @@ class FrontendHandler(webapp2.RequestHandler):
 
   def get(self):
     """Returns an available server's IP address in JSON format."""
-    ip = LoadInfo.GetIdleInstanceIpAddress()
+    ip = LoadInfo.getInstanceIpAddress("0,0")
     if not ip:
       ip = ''
     self.response.out.write(json.dumps({'ipaddress': ip}))
@@ -166,29 +149,32 @@ class RegisterHandler(webapp2.RequestHandler):
     logging.info('Instance created: %s', str(instance))
     external_ip = instance['networkInterfaces'][0][
         'accessConfigs'][0]['natIP']
-    LoadInfo.RegisterInstanceIpAddress(name, external_ip)
+    gridstr = LoadInfo.RegisterInstanceIpAddress(name, external_ip)
+    gridxy = gridstr.split(",")
+    gridx = gridxy[0]
+    gridy = gridxy[1]
+    """Returns script to set up game server."""
+    template = jinja_environment.get_template(
+        os.path.join('worker', 'setup_and_start_game.sh'))
+    self.response.out.write(template.render({
+        'apphostname': app_identity.get_default_version_hostname(),
+        'ip_address': self.request.remote_addr,
+        'gridx': gridx,
+        'gridy': gridy,
+        'name': name
+        }))
 
 
 class LoadMonitorHandler(webapp2.RequestHandler):
-  """URL handler class to receive load report from instances."""
-
   def post(self):
-    """Receives request from instance and updates load information."""
     # TODO(user): Secure this URL by using Cloud Endpoints.
     name = self.request.get('name')
-    load = self.request.get('load')
-    if not load:
-      load = 0
-    force = self.request.get('force')
-    force_set = None
-    if force:
-      if int(force):
-        force_set = True
-      else:
-        force_set = False
-    LoadInfo.UpdateLoadInfo(name, int(load), force_set)
-    self.response.headers['Content-Type'] = 'text/plain'
-    self.response.out.write('ok')
+    grid = self.request.get('grid')
+    
+    loadresp = LoadInfo.requestLoadInfo(name, grid)
+    if loadresp[LoadInfo.STATUS] == LoadInfo.STATUS_NONE:
+      ComputeEngineController().IncreaseEngine(grid)
+    self.response.out.write(json.dumps(loadresp))
 
 
 class LoadCheckerHandler(webapp2.RequestHandler):
@@ -213,6 +199,7 @@ class LoadCheckerHandler(webapp2.RequestHandler):
     reconnect, the game server must be drained before shutting down the
     instance.  In this exsample, decrement of the instance is not implemented.
     """
+    '''
     cluster_size, average_load = LoadInfo.GetAverageLoad()
     if cluster_size:
       if average_load > self.UPPER_THRESHOLD:
@@ -220,19 +207,9 @@ class LoadCheckerHandler(webapp2.RequestHandler):
       elif (average_load < self.LOWER_THRESHOLD and
             cluster_size > self.MIN_CLUSTER_SIZE):
         ComputeEngineController().DecreaseEngine(cluster_size / 10 + 1)
+    '''
+    pass
 
-
-class GameSetupHandler(webapp2.RequestHandler):
-  """URL handler class to send script to set up game server."""
-
-  def get(self):
-    """Returns script to set up game server."""
-    template = jinja_environment.get_template(
-        os.path.join('worker', 'setup_and_start_game.sh'))
-    self.response.out.write(template.render({
-        'cloud_storage': ComputeEngineController.CLOUD_STORAGE_DIR,
-        'ip_address': self.request.remote_addr
-        }))
 
 
 app = webapp2.WSGIApplication(
@@ -246,7 +223,6 @@ app = webapp2.WSGIApplication(
         ('/register', RegisterHandler),
         ('/load', LoadMonitorHandler),
         ('/check-load', LoadCheckerHandler),
-        ('/setup-and-start-game', GameSetupHandler),
         (decorator.callback_path, decorator.callback_handler()),
     ],
     debug=True)

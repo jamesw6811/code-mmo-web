@@ -21,6 +21,7 @@ import random
 
 from google.appengine.api import memcache
 from google.appengine.ext import db
+from compute_engine_controller import ComputeEngineController
 
 
 class SingleInstance(db.Model):
@@ -30,6 +31,7 @@ class SingleInstance(db.Model):
   is gone.
   """
   ip_address = db.StringProperty(multiline=False)
+  gridstr = db.StringProperty(multiline=False)
 
   @classmethod
   def GetByName(cls, name):
@@ -59,6 +61,10 @@ class LoadInfo(object):
 
   ALL_INSTANCES = 'all_instances'
   IP_ADDRESS = 'ip_address'
+  STATUS = 'status'
+  STATUS_NONE = 'none'
+  STATUS_LOADING = 'loading'
+  STATUS_UP = 'up'
   LOAD = 'load'
   FORCE = 'force'
   CANDIDATE_MIN_SIZE = 3
@@ -90,7 +96,7 @@ class LoadInfo(object):
     memcache.set(cls.ALL_INSTANCES, [])
 
   @classmethod
-  def AddInstance(cls, name):
+  def AddInstance(cls, name, grid):
     """Adds new instance to the list of instances in Memcache.
 
     Args:
@@ -99,7 +105,9 @@ class LoadInfo(object):
     # First, update Datastore.
     # Add StringInstance for this instance without ip_address property.
     # Existing entity with the same name is overwritten by put() call.
-    SingleInstance(key_name=name).put()
+    newins = SingleInstance(key_name=name);
+    newins.gridstr = grid;
+    newins.put();
 
     # Then update Memcache.
     # To avoid race condition, use cas update.
@@ -135,12 +143,14 @@ class LoadInfo(object):
       # Record IP address to SingleInstance in Datastore.
       instance = SingleInstance.GetByName(name)
       instance.ip_address = ip_address
+      grid = instance.gridstr;
       instance.put()
       # Update Memcache information.
-      memcache.set(name, {cls.IP_ADDRESS: ip_address})
+      memcache.set(grid, {cls.IP_ADDRESS: ip_address, cls.STATUS: cls.STATUS_UP})
+      return instance.gridstr
     else:
-      cls.AddInstance(name)
-      cls.RegisterInstanceIpAddress(name, ip_address)
+      #cls.AddInstance(name)
+      #cls.RegisterInstanceIpAddress(name, ip_address)
       logging.error('Registration request for unmanaged instance %s', name)
 
   @classmethod
@@ -165,117 +175,77 @@ class LoadInfo(object):
         break
 
     # Delete the entry for the instance in Memcache and Datastore.
-    memcache.delete(name)
     datastore_single_instance = SingleInstance.GetByName(name)
     if datastore_single_instance:
+      grid = datastore_single_instance.gridstr
+      memcache.delete(grid)
       datastore_single_instance.delete()
-
-  @classmethod
-  def UpdateLoadInfo(cls, name, load, force_set=None):
-    """Updates load informatino of one instance specified by name.
-
-    This function assumes the corresponding entry already exists, and fails
-    if it doesn't exist.  If force_set is already true, and new update is not
-    force_set, the function doesn't overwrite the old value.
-
-    Args:
-      name: Name of the instance.
-      load: New load level in percent integer [0-100].
-      force_set: Switch to set load overwrite ('force') flag.  True to set,
-          False to unset and None for unchange.
-    Returns:
-      Boolean to indicate success update.
-    """
-    if not cls._IsManagedInstance(name):
-      logging.error('Load update being sent from unregistered server.')
-      return False
-
-    info = memcache.get(name)
-    if info:
-      # If force flag is set in Memcache, it doesn't accept regular update.
-      # It's only updated when force_set switch is specified (True or False).
-      if info.get(cls.FORCE, False) and force_set is None:
-        return True
     else:
-      # The entry for this instance doesn't exist in Memcache.
-      logging.warning('Load entry of instance %s does not exist in Memcache',
-                      name)
+      logging.error('Trying to remove instance with no datastore entry!')
+
+  @classmethod
+  def requestLoadInfo(cls, name, grid):
+    if not cls._IsManagedInstance(name):
+      logging.error('Load request being sent from unregistered server.')
+      return False
+    info = memcache.get(grid)
+    if info:
+      return info;
+    else:
       # Try to get from Datastore.
-      ds_instance = SingleInstance.GetByName(name)
-      if ds_instance:
-        info = {cls.IP_ADDRESS: ds_instance.ip_address}
-      else:
-        logging.error('Load entry for instance %s not found in Datastore',
-                      name)
+      gridq = SingleInstance.filter("gridstr =", grid)
+      gridqr = gridq.run(limit = 5)
+      ds_instance = None;
+      if len(gridqr) > 1:
+        logging.error('More than one server registered on same grid position!')
         return False
-
-    info[cls.LOAD] = load
-    info[cls.FORCE] = bool(force_set)
-    return memcache.set(name, info)
-
-  @classmethod
-  def GetAll(cls):
-    """Retrieves all load information of all instances.
-
-    Returns:
-      Dictionary of instance name as a key and dictionary of load information
-      as a value.  If no instance is managed, returns empty dictionary.
-    """
-    all_instances = cls._GetInstanceList()
-    if not all_instances:
-      return {}
-    return memcache.get_multi(all_instances)
-
-  @classmethod
-  def GetIdleInstanceIpAddress(cls):
-    """Retrieves IP address of desirable instance.
-
-    This function returns IP address of one of the least loaded instances.
-    It returns an IP address randomly from several of the idlest instances.
-
-    Returns:
-      None if the function fails, otherwise IP address in string format
-      ('xxx.xxx.xxx.xxx').
-    """
-    all_infos = cls.GetAll()
-    candidates = []
-    # At least CANDIDATE_MIN_SIZE instances are added to candidates.
-    # After that, if the instance's load is the same as the last candidate's
-    # load, the instance is added to candidates.
-    for info in sorted(all_infos.values(),
-                       key=lambda x: x.get(cls.LOAD, 10000)):
-      if cls.LOAD not in info:
-        break
-      if len(candidates) < cls.CANDIDATE_MIN_SIZE:
-        candidates.append(info)
-        last_load = info[cls.LOAD]
+      elif len(gridqr) > 0:
+        ds_instance = gridqr[0]
       else:
-        if info[cls.LOAD] == last_load:
-          candidates.append(info)
-        else:
-          break
-    # If candidates are empty, we cannot return anything.
-    if not candidates:
-      return None
-    # Return IP address of one of the candidates randomly.
-    return candidates[random.randint(0, len(candidates) - 1)][cls.IP_ADDRESS]
+        ds_instance = None
+        
+      if ds_instance:
+        try:
+          info = {cls.STATUS: STATUS_UP, cls.IP_ADDRESS: ds_instance.ip_address}
+        except AttributeError:
+          logging.info('No IP address attribute.')
+          info = {cls.STATUS: STATUS_LOADING}
+      else:
+        return {cls.STATUS: STATUS_NONE}
+
+    memcache.set(grid, info)
+    return info
 
   @classmethod
-  def GetAverageLoad(cls):
-    """Calculates average load of all instances.
+  def getInstanceIpAddress(cls, grid):
+    info = memcache.get(grid)
+    if info:
+      if info[cls.STATUS] == cls.STATUS_UP:
+        return info[cls.IP_ADDRESS]
+      else:
+        return ''
+    else:
+      # Try to get from Datastore.
+      gridq = SingleInstance.filter("gridstr =", grid)
+      gridqr = gridq.run(limit = 5)
+      ds_instance = None;
+      if len(gridqr) > 1:
+        logging.error('More than one server registered on same grid position!')
+        return ''
+      elif len(gridqr) > 0:
+        ds_instance = gridqr[0]
+      else:
+        ds_instance = None
+        
+      if ds_instance:
+        try:
+          info = {cls.STATUS: STATUS_UP, cls.IP_ADDRESS: ds_instance.ip_address}
+        except AttributeError:
+          logging.info('No IP address attribute in getIP.')
+          return ''
+      else:
+        return ''
+    memcache.set(grid, info)
+    return info[cls.IP_ADDRESS]
 
-    Returns:
-      Cluster size and average load.  Average load level is in percent in
-      integer [0-100].
-    """
-    all_infos = cls.GetAll()
-    total_load = 0
-    cluster_size = 0
-    for info in all_infos.values():
-      if cls.LOAD in info:
-        cluster_size += 1
-        total_load += info[cls.LOAD]
-    if not cluster_size:
-      return 0, 0
-    return cluster_size, total_load / cluster_size
 

@@ -265,26 +265,17 @@ class ComputeEngineController(object):
     those tasks work under permission of the user who started the cluster.
     """
     LoadInfo.InitializeTable()
-    self.IncreaseEngine(self.INITIAL_CLUSTER_SIZE)
+    self.IncreaseEngine("0,0")
 
   def TearDownCluster(self):
     """Deletes all Compute Engine instances with our name prefix."""
     for instance in self.ListInstances():
       self._DeleteInstance(instance['name'])
 
-  def IncreaseEngine(self, increase_count):
-    """Starts specified number of Compute Engine instances.
-
-    Args:
-      increase_count: Number of instances to increase.
-    """
-    for _ in xrange(increase_count):
-      instance_name = self.WORKER_NAME_PREFIX + str(uuid.uuid4())
-      # Add instance name to load information before actually creating the
-      # instance to avoid, to make sure the instance is managed
-      # when it registers IP address.
-      LoadInfo.AddInstance(instance_name)
-      self._StartInstance(instance_name)
+  def IncreaseEngine(self, grid):
+    instance_name = self.WORKER_NAME_PREFIX + str(uuid.uuid4())
+    LoadInfo.AddInstance(instance_name, grid)
+    self._StartInstance(instance_name)
 
   def DecreaseEngine(self, decrease_count):
     """Reduces specified number of Compute Engine instances.

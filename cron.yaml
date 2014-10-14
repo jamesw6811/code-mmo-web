@@ -15,5 +15,5 @@
 cron:
 - description: Periodically checks overall load level
   url: /check-load
-  schedule: every 1 minutes
+  schedule: every 5 minutes
 

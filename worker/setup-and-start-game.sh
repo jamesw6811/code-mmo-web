@@ -24,4 +24,4 @@ sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
 curl https://www.npmjs.org/install.sh | sudo sh
 sudo npm install socket.io express
 sudo npm install googleapis@0.4.5
-node $CODEMMO_HOME/gameserver.js &
+node $CODEMMO_HOME/gameserver.js {{ name }} {{ gridx }} {{ gridy }} {{ apphostname }} &
