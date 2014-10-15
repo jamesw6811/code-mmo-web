@@ -32,10 +32,6 @@ handlers:
   static_files: static_files/\1
   upload: static_files/.*\.js
 
-- url: /(.*\.sh)
-  static_files: worker/\1
-  upload: worker/.*\.sh
-
 - url: /img/(.*\.(png|jpg))
   static_files: static_files/\1
   upload: static_files/.*\.(png|jpg)

@@ -15,7 +15,7 @@ from google.appengine.api import app_identity
 
 
 jinja_environment = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+    loader=jinja2.FileSystemLoader('worker'))
 
 
 decorator = OAuth2Decorator(
@@ -154,8 +154,8 @@ class RegisterHandler(webapp2.RequestHandler):
     gridx = gridxy[0]
     gridy = gridxy[1]
     """Returns script to set up game server."""
-    template = jinja_environment.get_template(
-        os.path.join('worker', 'setup_and_start_game.sh'))
+    
+    template = jinja_environment.get_template('setup-and-start-game.sh')
     self.response.out.write(template.render({
         'apphostname': app_identity.get_default_version_hostname(),
         'ip_address': self.request.remote_addr,

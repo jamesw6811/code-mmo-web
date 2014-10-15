@@ -1,20 +1,12 @@
 #!/bin/bash
-
-
-
 CODEMMO_HOME=code-mmo
-
-
 # Set up AppEngine SDK and development server.
 #tar zxf google_appengine_*.tar.gz
-
 # Set up node.js
 #tar zxf node-v0.*-linux-x64.tar.gz
 #ln -s node-v0.*-linux-x64 node_js
-
 #perl -pi -e 's/MATCHER_HOST = "localhost"/MATCHER_HOST = "{{ ip_address }}"/' \
 #    gritsgame/src/games-server/main.js
-
 # Start game.
 sudo apt-get update
 sudo apt-get install git -y
