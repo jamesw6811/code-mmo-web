@@ -52,7 +52,8 @@ var canvas,     // Canvas DOM element
   keys,     // Keyboard input
   localPlayer,  // Local player
   entities,  // Remote players
-  socket;     // Socket connection
+  socket, // Main socket connection
+  viewsockets;     // Socket connections for extra views
 
 
 /**************************************************
@@ -84,6 +85,7 @@ function init(url) {
   entities = [];
   entities.push(localPlayer);
   
+  viewsockets = [];
   // Initialise socket connection
   socket = io.connect(url);
   console.log("Initializing connection with "+url);
@@ -119,6 +121,9 @@ var setEventHandlers = function() {
 
   // Player removed message received
   socket.on("remove entity", onRemoveEntity);
+  
+  // Add viewserver message received
+  socket.on("new viewserver", onNewViewServer);
 };
 
 // Keyboard key down
@@ -192,6 +197,33 @@ function onRemoveEntity(data) {
   // Remove player from array
   entities.splice(entities.indexOf(removeEntity), 1);
 };
+
+function onNewViewServer(data) {
+	console.log("New view server:"+data.address);
+	socket = io.connect('http://' + data.address + ':8000/view');
+	console.log("Initializing connection...");
+	
+	// Socket connection successful
+	socket.on("connect", function(){
+		console.log("Connected to view server:"+data.address);
+	});
+
+	// Socket disconnection
+	socket.on("disconnect", function(){
+		console.log("Disconnected from view server:"+data.address);
+	});
+	
+	// New player message received
+	socket.on("new entity", onNewEntity);
+
+	// Player move message received
+	socket.on("move entity", onMoveEntity);
+
+	// Player removed message received
+	socket.on("remove entity", onRemoveEntity);
+	
+    viewsockets.push(socket);
+}
 
 
 /**************************************************
