@@ -207,6 +207,8 @@ class LoadInfo(object):
       if ds_instance:
         try:
           info = {cls.STATUS: cls.STATUS_UP, cls.IP_ADDRESS: ds_instance.ip_address}
+          if (ds_instance.ip_address is None) or (not ('.' in ds_instance.ip_address)):
+            raise AttributeError("No IP Address.")
         except AttributeError:
           logging.info('No IP address attribute.')
           info = {cls.STATUS: cls.STATUS_LOADING}
