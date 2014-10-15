@@ -184,16 +184,17 @@ class LoadInfo(object):
 
   @classmethod
   def requestLoadInfo(cls, name, grid):
-    if not cls._IsManagedInstance(name):
-      logging.error('Load request being sent from unregistered server.')
-      return False
+    # TODO uncomment below for security
+    #if not cls._IsManagedInstance(name):
+   #   logging.error('Load request being sent from unregistered server.')
+    #  return False
     info = memcache.get(grid)
     if info:
       return info;
     else:
       # Try to get from Datastore.
-      gridq = SingleInstance.filter("gridstr =", grid)
-      gridqr = gridq.run(limit = 5)
+      gridq = SingleInstance.all().filter("gridstr =", grid)
+      gridqr = gridq.fetch(limit = 2)
       ds_instance = None;
       if len(gridqr) > 1:
         logging.error('More than one server registered on same grid position!')
@@ -205,12 +206,12 @@ class LoadInfo(object):
         
       if ds_instance:
         try:
-          info = {cls.STATUS: STATUS_UP, cls.IP_ADDRESS: ds_instance.ip_address}
+          info = {cls.STATUS: cls.STATUS_UP, cls.IP_ADDRESS: ds_instance.ip_address}
         except AttributeError:
           logging.info('No IP address attribute.')
-          info = {cls.STATUS: STATUS_LOADING}
+          info = {cls.STATUS: cls.STATUS_LOADING}
       else:
-        return {cls.STATUS: STATUS_NONE}
+        return {cls.STATUS: cls.STATUS_NONE}
 
     memcache.set(grid, info)
     return info
