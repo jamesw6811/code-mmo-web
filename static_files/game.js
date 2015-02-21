@@ -126,6 +126,33 @@ var setEventHandlers = function() {
   socket.on("new viewserver", onNewViewServer);
 };
 
+function onNewViewServer(data) {
+	console.log("New view server:"+data.address);
+	var viewsocket = io.connect('http://' + data.address + ':8000/view');
+	console.log("Initializing connection...");
+	
+	// Socket connection successful
+	viewsocket.on("connect", function(){
+		console.log("Connected to view server:"+data.address);
+	});
+
+	// Socket disconnection
+	viewsocket.on("disconnect", function(){
+		console.log("Disconnected from view server:"+data.address);
+	});
+	
+	// New player message received
+	viewsocket.on("new entity", onNewEntity);
+
+	// Player move message received
+	viewsocket.on("move entity", onMoveEntity);
+
+	// Player removed message received
+	viewsocket.on("remove entity", onRemoveEntity);
+	
+    viewsockets.push(viewsocket);
+}
+
 // Keyboard key down
 function onKeydown(e) {
   if (localPlayer) {
@@ -198,32 +225,6 @@ function onRemoveEntity(data) {
   entities.splice(entities.indexOf(removeEntity), 1);
 };
 
-function onNewViewServer(data) {
-	console.log("New view server:"+data.address);
-	socket = io.connect('http://' + data.address + ':8000/view');
-	console.log("Initializing connection...");
-	
-	// Socket connection successful
-	socket.on("connect", function(){
-		console.log("Connected to view server:"+data.address);
-	});
-
-	// Socket disconnection
-	socket.on("disconnect", function(){
-		console.log("Disconnected from view server:"+data.address);
-	});
-	
-	// New player message received
-	socket.on("new entity", onNewEntity);
-
-	// Player move message received
-	socket.on("move entity", onMoveEntity);
-
-	// Player removed message received
-	socket.on("remove entity", onRemoveEntity);
-	
-    viewsockets.push(socket);
-}
 
 
 /**************************************************
