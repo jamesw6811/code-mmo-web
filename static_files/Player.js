@@ -36,10 +36,10 @@ Player.prototype.updateKeys = function(keys) {
         return (prevX != this.x || prevY != this.y) ? true : false;
     };
 
-Player.prototype.draw = function(ctx) {
-		ctx.fillStyle = "#888888";
-        ctx.fillRect(this.x-5, this.y-5, 10, 10);
-    };
+//Player.prototype.draw = function(ctx) {
+//		ctx.fillStyle = "#888888";
+//        ctx.fillRect(this.x-5, this.y-5, 10, 10);
+//    };
 	
 	
 Player.prototype.toDS = function() {

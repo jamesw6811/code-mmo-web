@@ -118,6 +118,9 @@ var setEventHandlers = function() {
 
   // Player move message received
   socket.on("move entity", onMoveEntity);
+  
+  // Update local player message received
+  socket.on("update player", onUpdatePlayer);
 
   // Player removed message received
   socket.on("remove entity", onRemoveEntity);
@@ -203,6 +206,10 @@ function onMoveEntity(data) {
 
   // Update Entity position
 };
+
+function onUpdatePlayer(player) {
+	localPlayer.updateFromEmit(player);
+}
 
 function addEntity(data) {
     var ent = new Entity(data.id);
