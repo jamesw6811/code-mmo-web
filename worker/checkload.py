@@ -22,6 +22,7 @@ class CpuUsageFetcher(object):
 
   NUM_PLAYERS_FILE = 'num_players'
   REGISTER_URL = 'http://{{ hostname }}/register'
+  SHUTDOWN_URL = 'http://{{ hostname }}/shutdown'
 
   def __init__(self):
     self.hostname = socket.gethostname()
@@ -37,7 +38,7 @@ class CpuUsageFetcher(object):
     f.close()
     os.chmod(local_script_file, 0700)
     subprocess.call('./' + local_script_file)
-    os.system("sudo shutdown now -h -k")
+    os.system("sudo shutdown now -h")
 
 '''
   def Check(self):
