@@ -134,6 +134,7 @@ class TearDownHandler(webapp2.RequestHandler):
   def get(self):
     """Deletes Compute Engine cluster."""
     ComputeEngineController(decorator.credentials).TearDownCluster()
+    LoadInfo.RemoveAllInstances()
 
 
 class RegisterHandler(webapp2.RequestHandler):

@@ -181,6 +181,29 @@ class LoadInfo(object):
       datastore_single_instance.delete()
     else:
       logging.error('Trying to remove instance with no datastore entry!')
+      
+  @classmethod
+  def RemoveAllInstances(cls):
+    """Removes load information entry of all instances during teardown.
+
+    Args:
+      name: Name of the instance to remove from load information list.
+    """
+    # Use cas operation to remove all instances from instance list
+    memcache_client = memcache.Client()
+    while True:
+      if memcache_client.flush_all():
+        break
+
+    # Delete the entries for the instances in Memcache and Datastore.
+    while True:
+      datastore_all_instances = SingleInstance.all();
+      allinstances = datastore_all_instances.fetch(limit=100)
+      if len(allinstances) == 0:
+        break
+      for ins in allinstances:
+        ins.delete()
+      
 
   @classmethod
   def requestLoadInfo(cls, name, grid):
