@@ -196,7 +196,7 @@ class ComputeEngineController(object):
 
     operation = self.compute_api.instances().insert(
         project=self.PROJECT_ID, zone=self.DEFAULT_ZONE, body=param).execute()
-    response = self._blocking_call(compute_api, operation)
+    response = self._blocking_call(self.compute_api, operation)
     logging.info('Create instance response: %s', str(response))
 
   def _blocking_call(self, gce_service, response):
