@@ -38,11 +38,14 @@ ZUOYJaqTju5cLjitHIcY7Dn2KTB3DKYM+reMlNcKD7JGoDgh55mU8t4Wx9mqkfDg
 ArSXpfm9zfNTN/Kx251uTMNL1elBpMwjr4RuJd97cG2Rs9Hvl5R9Ig==
 -----END RSA PRIVATE KEY-----
 " >> id_rsa
-sudo bash
-chmod 600 id_rsa
-ssh-agent bash -c 'ssh-add id_rsa; git clone git@github.com:jamesw6811/code-mmo.git'
-apt-get install nodejs -y
-update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
-curl -L https://www.npmjs.org/install.sh | sh
-npm install socket.io express socket.io-client request googleapis@0.4.5
-node $CODEMMO_HOME/gameserver.js {{ name }} {{ gridx }} {{ gridy }} {{ apphostname }} &
+sudo mkdir /root/.ssh
+sudo sh -c 'echo "Host github.com
+    StrictHostKeyChecking no
+" >> /root/.ssh/config'
+sudo chmod 600 id_rsa
+sudo ssh-agent bash -c 'ssh-add id_rsa; git clone git@github.com:jamesw6811/code-mmo.git'
+sudo apt-get install nodejs -y
+sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
+sudo curl -L https://www.npmjs.org/install.sh | sh
+sudo npm install socket.io express socket.io-client request googleapis@0.4.5
+sudo node $CODEMMO_HOME/gameserver.js {{ name }} {{ gridx }} {{ gridy }} {{ apphostname }} &
