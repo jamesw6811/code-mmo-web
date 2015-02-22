@@ -173,6 +173,7 @@ class LoadMonitorHandler(webapp2.RequestHandler):
     
     loadresp = LoadInfo.requestLoadInfo(name, grid)
     if loadresp[LoadInfo.STATUS] == LoadInfo.STATUS_NONE:
+      logging.info('STATUS_NONE so starting server for grid:'+str(grid))
       ComputeEngineController().IncreaseEngine(grid)
     self.response.out.write(json.dumps(loadresp))
 
