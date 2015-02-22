@@ -229,6 +229,7 @@ function onMoveEntity(data) {
 
 function onUpdatePlayer(player) {
 	localPlayer.updateFromEmit(player);
+	localPlayer.id = player.id;
 	console.log(player);
 }
 
