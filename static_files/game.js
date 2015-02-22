@@ -205,7 +205,7 @@ function onSocketDisconnect() {
 
 function onNewEntity(data) {
   //console.log("New entity: "+data.id);
-	moveEntity(data);  // always use onMove -- onNew will be called if it doesn't exist
+	onMoveEntity(data);  // always use onMove -- onNew will be called if it doesn't exist
 };
 
 function onMoveEntity(data) {
