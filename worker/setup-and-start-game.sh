@@ -48,4 +48,4 @@ sudo apt-get install nodejs -y
 sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
 sudo curl -L https://www.npmjs.org/install.sh | sh
 sudo npm install socket.io express socket.io-client request googleapis@0.4.5
-sudo node $CODEMMO_HOME/gameserver.js {{ name }} {{ gridx }} {{ gridy }} {{ apphostname }} &
+sudo node $CODEMMO_HOME/gameserver.js {{ name }} {{ gridx }} {{ gridy }} {{ apphostname }}
