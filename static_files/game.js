@@ -190,7 +190,7 @@ function onSocketDisconnect() {
 };
 
 function onNewEntity(data) {
-  console.log("New entity: "+data.id);
+  //console.log("New entity: "+data.id);
 	addEntity(data);
 };
 
@@ -209,6 +209,7 @@ function onMoveEntity(data) {
 
 function onUpdatePlayer(player) {
 	localPlayer.updateFromEmit(player);
+	console.log(player);
 }
 
 function addEntity(data) {

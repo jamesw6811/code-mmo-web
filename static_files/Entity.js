@@ -16,7 +16,7 @@ Entity.Types.Entity = Entity;
 Entity.MACHINESHIFT = 4294967296;
 Entity.IDSHIFT = 1;
 Entity.nextid = 0;
-Entity.GRAPHICS = {1 : '#000000', 3 : '#FF0000', 10000 : '#00FF00', 10001: '#888800'};
+Entity.GRAPHICS = {1 : '#00FF00', 3 : '#FF0000', 10000 : '#00FF00', 10001: '#888800'};
 
 Entity.prototype.getEmit = function(){
 	return {id: this.id, x: this.x, y: this.y, graphic: this.graphic, layer: this.layer};
