@@ -196,7 +196,31 @@ class ComputeEngineController(object):
 
     operation = self.compute_api.instances().insert(
         project=self.PROJECT_ID, zone=self.DEFAULT_ZONE, body=param).execute()
-    logging.info('Create instance operation: %s', str(operation))
+    response = self._blocking_call(compute_api, operation)
+    logging.info('Create instance response: %s', str(response))
+
+  def _blocking_call(self, gce_service, response):
+    """Blocks until the operation status is done for the given operation."""
+
+    status = response['status']
+    while status != 'DONE' and response:
+      operation_id = response['name']
+
+      # Identify if this is a per-zone resource
+      if 'zone' in response:
+        zone_name = response['zone'].split('/')[-1]
+        request = gce_service.zoneOperations().get(
+            project=self.PROJECT_ID,
+            operation=operation_id,
+            zone=zone_name)
+      else:
+        request = gce_service.globalOperations().get(
+             project=self.PROJECT_ID, operation=operation_id)
+
+      response = request.execute()
+      if response:
+        status = response['status']
+    return response
 
   def _DeleteInstance(self, instance_name):
     """Stops and deletes the instance specified by the name."""

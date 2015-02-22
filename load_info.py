@@ -251,7 +251,7 @@ class LoadInfo(object):
         return ''
     else:
       # Try to get from Datastore.
-      gridq = SingleInstance.filter("gridstr =", grid)
+      gridq = SingleInstance.all().filter("gridstr =", grid)
       gridqr = gridq.run(limit = 5)
       ds_instance = None;
       if len(gridqr) > 1:
