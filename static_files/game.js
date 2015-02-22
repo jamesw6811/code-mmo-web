@@ -200,7 +200,7 @@ function onResize(e) {
 
 // Socket connected
 function onSocketConnected() {
-  console.log("Connected to socket server");
+  console.log("Connected to socket server, sending id:"+localPlayer.id);
   socket.emit("new player", {id : localPlayer.id});
 };
 
