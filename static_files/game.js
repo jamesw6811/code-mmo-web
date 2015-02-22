@@ -35,7 +35,7 @@ function play() {
   $.getJSON('/getip.json', function(json) {
     playreqsuccess = 1;
     if (json['ipaddress']) {
-      init('http://' + json['ipaddress'] + ':8000');
+      init('http://' + json['ipaddress'] + ':8000/main');
       animate();
     } else {
       alert('No Game Server Available.');
@@ -140,7 +140,7 @@ function onTransferServer(data){
   viewsockets = [];
   socket.disconnect();
   // Initialise socket connection
-  socket = io.connect(data.address);
+  socket = io.connect('http://' + data.address + ':8000/main');
   console.log("Initializing connection with "+data.address);
 }
 
