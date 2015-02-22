@@ -112,7 +112,7 @@ var setSocketHandlers = function() {
   socket.on("disconnect", onSocketDisconnect);
 
   // New player message received
-  socket.on("new entity", onMoveEntity); // always use onMove -- onNew will be called if it doesn't exist
+  socket.on("new entity", onNewEntity);
 
   // Player move message received
   socket.on("move entity", onMoveEntity);
@@ -205,7 +205,7 @@ function onSocketDisconnect() {
 
 function onNewEntity(data) {
   //console.log("New entity: "+data.id);
-	addEntity(data);
+	moveEntity(data);  // always use onMove -- onNew will be called if it doesn't exist
 };
 
 function onMoveEntity(data) {
