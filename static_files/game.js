@@ -79,7 +79,7 @@ function init(url) {
 
   // Initialise the local player
   localPlayer = new Player();
-  localPlayer.id = -1;
+  localPlayer.id = null;
 
   // Initialise array
   entities = [];
@@ -127,7 +127,22 @@ var setEventHandlers = function() {
   
   // Add viewserver message received
   socket.on("new viewserver", onNewViewServer);
+  
+  // Transfer servers message received
+  socket.on("transfer server", onTransferServer);
 };
+
+function onTransferServer(data){
+  var i = 0;
+  for(i = 0; i < viewsockets.length; i++){
+	  viewsockets[i].disconnect();
+  }
+  viewsockets = [];
+  socket.disconnect();
+  // Initialise socket connection
+  socket = io.connect(data.address);
+  console.log("Initializing connection with "+data.address);
+}
 
 function onNewViewServer(data) {
 	console.log("New view server:"+data.address);
@@ -180,8 +195,7 @@ function onResize(e) {
 // Socket connected
 function onSocketConnected() {
   console.log("Connected to socket server");
-
-  socket.emit("new player", {x: localPlayer.x, y: localPlayer.y});
+  socket.emit("new player", {id : localPlayer.id});
 };
 
 function onSocketDisconnect() {
