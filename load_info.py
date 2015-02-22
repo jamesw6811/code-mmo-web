@@ -240,7 +240,7 @@ class LoadInfo(object):
           info = {cls.STATUS: cls.STATUS_LOADING, cls.LAST_RESP: ds_instance.statusresp}
       else:
         return {cls.STATUS: cls.STATUS_NONE}
-
+      info['name'] = ds_instance.key().name()
     memcache.set(grid, info)
     return info
 

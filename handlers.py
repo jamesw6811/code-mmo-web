@@ -180,8 +180,9 @@ class LoadMonitorHandler(webapp2.RequestHandler):
       newresp = ComputeEngineController().checkResponse(loadresp[LoadInfo.LAST_RESP])
       logging.info('Loading latest resp:'+str(newresp))
       if newresp.has_key("error"):
-        logging.warn('Error loading server, removing from LoadInfo:'+str(newresp['error']))
-        LoadInfo.RemoveInstance(name)
+        logging.warn('Error loading server:'+str(newresp['error']))
+        logging.warn('Removing from instances:'+str(loadresp['name']))
+        LoadInfo.RemoveInstance(loadresp['name'])
       else:
         logging.info('No errors, still loading...')
     self.response.out.write(json.dumps(loadresp))
