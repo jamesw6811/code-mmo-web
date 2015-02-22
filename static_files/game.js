@@ -71,12 +71,6 @@ function init(url) {
   // Initialise keyboard controls
   keys = new Keys();
 
-  // Calculate a random start position for the local player
-  // The minus 5 (half a player size) stops the player being
-  // placed right on the egde of the screen
-  var startX = Math.round(Math.random()*(canvas.width-5)),
-    startY = Math.round(Math.random()*(canvas.height-5));
-
   // Initialise the local player
   localPlayer = new Player();
   localPlayer.id = null;
@@ -87,7 +81,7 @@ function init(url) {
   
   viewsockets = [];
   // Initialise socket connection
-  socket = io.connect(url);
+  socket = io.connect(url, { forceNew: true });
   console.log("Initializing connection with "+url);
 
 
@@ -144,16 +138,16 @@ function onTransferServer(data){
   viewsockets = [];
   socket.removeAllListeners();
   socket.disconnect();
+  
   // Initialise socket connection
-  socket = io.connect('http://' + data.address + ':8000/main');
-  console.log("Initializing connection with "+data.address);
+  socket = io.connect('http://' + data.address + ':8000/main', { forceNew: true });
   setSocketHandlers();
+  console.log("Initializing connection with "+data.address);
 }
 
 function onNewViewServer(data) {
 	console.log("New view server:"+data.address);
-	var viewsocket = io.connect('http://' + data.address + ':8000/view');
-	console.log("Initializing connection...");
+	var viewsocket = io.connect('http://' + data.address + ':8000/view', { forceNew: true });
 	
 	// Socket connection successful
 	viewsocket.on("connect", function(){
