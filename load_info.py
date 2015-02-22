@@ -252,11 +252,11 @@ class LoadInfo(object):
     else:
       # Try to get from Datastore.
       gridq = SingleInstance.all().filter("gridstr =", grid)
-      gridqr = gridq.run(limit = 5)
+      gridqr = gridq.fetch(limit = 2)
       ds_instance = None;
       if len(gridqr) > 1:
         logging.error('More than one server registered on same grid position!')
-        return ''
+        return False
       elif len(gridqr) > 0:
         ds_instance = gridqr[0]
       else:
