@@ -93,6 +93,7 @@ function init(url) {
 
   // Start listening for events
   setEventHandlers();
+  setSocketHandlers();
 };
 
 
@@ -106,7 +107,10 @@ var setEventHandlers = function() {
 
   // Window resize
   window.addEventListener("resize", onResize, false);
+  
+};
 
+var setSocketHandlers(){
   // Socket connection successful
   socket.on("connect", onSocketConnected);
 
@@ -130,7 +134,7 @@ var setEventHandlers = function() {
   
   // Transfer servers message received
   socket.on("transfer server", onTransferServer);
-};
+}
 
 function onTransferServer(data){
   var i = 0;
@@ -142,6 +146,7 @@ function onTransferServer(data){
   // Initialise socket connection
   socket = io.connect('http://' + data.address + ':8000/main');
   console.log("Initializing connection with "+data.address);
+  setSocketHandlers();
 }
 
 function onNewViewServer(data) {
