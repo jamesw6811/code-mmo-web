@@ -110,7 +110,7 @@ var setEventHandlers = function() {
   
 };
 
-var setSocketHandlers(){
+var setSocketHandlers = function() {
   // Socket connection successful
   socket.on("connect", onSocketConnected);
 
@@ -142,6 +142,7 @@ function onTransferServer(data){
 	  viewsockets[i].disconnect();
   }
   viewsockets = [];
+  socket.removeAllListeners();
   socket.disconnect();
   // Initialise socket connection
   socket = io.connect('http://' + data.address + ':8000/main');
