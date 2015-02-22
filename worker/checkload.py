@@ -38,7 +38,9 @@ class CpuUsageFetcher(object):
     f.close()
     os.chmod(local_script_file, 0700)
     subprocess.call('./' + local_script_file)
-    os.system("sudo shutdown now -h")
+    response = urllib.urlopen(self.SHUTDOWN_URL,
+                   data=urllib.urlencode({'name': self.hostname}))
+    print response
 
 '''
   def Check(self):

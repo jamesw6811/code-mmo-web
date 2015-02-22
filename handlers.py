@@ -165,6 +165,15 @@ class RegisterHandler(webapp2.RequestHandler):
         'name': name
         }))
 
+class ShutdownHandler(webapp2.RequestHandler):
+  """URL handler class for deleting the instance."""
+
+  def post(self):
+    """Delete instance to managed cluster by registering IP address."""
+    # TODO(user): Secure this URL by using Cloud Endpoints.
+    name = self.request.get('name')
+    ComputeEngineController()._DeleteInstance(name)
+    self.response.out.write("Shutting down instance...");
 
 class LoadMonitorHandler(webapp2.RequestHandler):
   def post(self):
@@ -232,6 +241,7 @@ app = webapp2.WSGIApplication(
         ('/startup', StartUpHandler),
         ('/teardown', TearDownHandler),
         ('/register', RegisterHandler),
+        ('/shutdown', ShutdownHandler),
         ('/load', LoadMonitorHandler),
         
         ('/check-load', LoadCheckerHandler),
