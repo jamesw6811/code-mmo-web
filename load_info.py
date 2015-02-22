@@ -31,6 +31,7 @@ class SingleInstance(db.Model):
   """
   ip_address = db.StringProperty(multiline=False)
   gridstr = db.StringProperty(multiline=False)
+  statusresp = db.TextProperty()
 
   @classmethod
   def GetByName(cls, name):
@@ -64,6 +65,7 @@ class LoadInfo(object):
   STATUS_NONE = 'none'
   STATUS_LOADING = 'loading'
   STATUS_UP = 'up'
+  LAST_RESP = 'last_resp'
   LOAD = 'load'
   FORCE = 'force'
   CANDIDATE_MIN_SIZE = 3
@@ -95,7 +97,7 @@ class LoadInfo(object):
     memcache.set(cls.ALL_INSTANCES, [])
 
   @classmethod
-  def AddInstance(cls, name, grid):
+  def AddInstance(cls, name, grid, resp):
     """Adds new instance to the list of instances in Memcache.
 
     Args:
@@ -106,6 +108,7 @@ class LoadInfo(object):
     # Existing entity with the same name is overwritten by put() call.
     newins = SingleInstance(key_name=name);
     newins.gridstr = grid;
+    newins.statusresp = str(resp);
     newins.put();
 
     # Then update Memcache.
@@ -234,7 +237,7 @@ class LoadInfo(object):
             raise AttributeError("No IP Address.")
         except AttributeError:
           logging.info('No IP address attribute.')
-          info = {cls.STATUS: cls.STATUS_LOADING}
+          info = {cls.STATUS: cls.STATUS_LOADING, cls.LAST_RESP: ds_instance.statusresp}
       else:
         return {cls.STATUS: cls.STATUS_NONE}
 
@@ -264,9 +267,10 @@ class LoadInfo(object):
         
       if ds_instance:
         try:
-          info = {cls.STATUS: STATUS_UP, cls.IP_ADDRESS: ds_instance.ip_address}
+          info = {cls.STATUS: cls.STATUS_UP, cls.IP_ADDRESS: ds_instance.ip_address}
         except AttributeError:
           logging.info('No IP address attribute in getIP.')
+      
           return ''
       else:
         return ''

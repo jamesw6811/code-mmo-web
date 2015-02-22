@@ -176,6 +176,9 @@ class LoadMonitorHandler(webapp2.RequestHandler):
     if loadresp[LoadInfo.STATUS] == LoadInfo.STATUS_NONE:
       logging.info('STATUS_NONE so starting server for grid:'+str(grid))
       ComputeEngineController().IncreaseEngine(grid)
+    if loadresp[LoadInfo.STATUS] == LoadInfo.STATUS_LOADING:
+      newresp = ComputeEngineController().checkResponse(loadresp[LoadInfo.LAST_RESP])
+      logging.info('Loading latest resp:'+str(newresp))
     self.response.out.write(json.dumps(loadresp))
 
 
@@ -224,6 +227,7 @@ app = webapp2.WSGIApplication(
         ('/teardown', TearDownHandler),
         ('/register', RegisterHandler),
         ('/load', LoadMonitorHandler),
+        
         ('/check-load', LoadCheckerHandler),
         (decorator.callback_path, decorator.callback_handler()),
     ],

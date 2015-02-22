@@ -37,7 +37,7 @@ class CpuUsageFetcher(object):
     f.close()
     os.chmod(local_script_file, 0700)
     subprocess.call('./' + local_script_file)
-	os.system("sudo shutdown now -h -k")
+    os.system("sudo shutdown now -h -k")
 
 '''
   def Check(self):

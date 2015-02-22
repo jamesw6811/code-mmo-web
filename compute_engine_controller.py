@@ -25,6 +25,7 @@ This module uses Google APIs Client Library to control Compute Engine.
 import logging
 import os
 import uuid
+import ast
 
 from apiclient.discovery import build
 from apiclient.errors import HttpError
@@ -196,30 +197,32 @@ class ComputeEngineController(object):
 
     operation = self.compute_api.instances().insert(
         project=self.PROJECT_ID, zone=self.DEFAULT_ZONE, body=param).execute()
-    response = self._blocking_call(self.compute_api, operation)
-    logging.info('Create instance response: %s', str(response))
 
-  def _blocking_call(self, gce_service, response):
-    """Blocks until the operation status is done for the given operation."""
+    
+    logging.info('Create instance response: %s', str(operation))
+    return operation
 
+  def checkResponse(self, response):
+    """Returns the operation status for the given operation."""
+    response = ast.literal_eval(response);
+    gce_service = self.compute_api
     status = response['status']
-    while status != 'DONE' and response:
-      operation_id = response['name']
+    operation_id = response['name']
 
-      # Identify if this is a per-zone resource
-      if 'zone' in response:
-        zone_name = response['zone'].split('/')[-1]
-        request = gce_service.zoneOperations().get(
-            project=self.PROJECT_ID,
-            operation=operation_id,
-            zone=zone_name)
-      else:
-        request = gce_service.globalOperations().get(
-             project=self.PROJECT_ID, operation=operation_id)
+    # Identify if this is a per-zone resource
+    if 'zone' in response:
+      zone_name = response['zone'].split('/')[-1]
+      request = gce_service.zoneOperations().get(
+          project=self.PROJECT_ID,
+          operation=operation_id,
+          zone=zone_name)
+    else:
+      request = gce_service.globalOperations().get(
+           project=self.PROJECT_ID, operation=operation_id)
 
-      response = request.execute()
-      if response:
-        status = response['status']
+    response = request.execute()
+    if response:
+      status = response['status']
     return response
 
   def _DeleteInstance(self, instance_name):
@@ -298,8 +301,8 @@ class ComputeEngineController(object):
 
   def IncreaseEngine(self, grid):
     instance_name = self.WORKER_NAME_PREFIX + str(uuid.uuid4())
-    LoadInfo.AddInstance(instance_name, grid)
-    self._StartInstance(instance_name)
+    response = self._StartInstance(instance_name)
+    LoadInfo.AddInstance(instance_name, grid, response)
 
   def DecreaseEngine(self, decrease_count):
     """Reduces specified number of Compute Engine instances.
