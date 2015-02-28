@@ -130,6 +130,9 @@ class LoadInfo(object):
       if memcache_client.cas(cls.ALL_INSTANCES, instances):
         break
 
+    info = {cls.STATUS: cls.STATUS_LOADING, cls.LAST_RESP: str(resp)}
+    memcache.set(grid, info)
+
   @classmethod
   def RegisterInstanceIpAddress(cls, name, ip_address):
     """Registers IP address of the instance to load information.
