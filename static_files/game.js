@@ -281,7 +281,11 @@ function draw() {
   // Wipe the canvas clean
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
-  ctx.translate(-localPlayer.x+canvas.width/2, -localPlayer.y+canvas.height/2);
+  
+  // Transform and rotate to player view
+  ctx.translate(canvas.width/2, canvas.height/2);
+  ctx.rotate((90-localPlayer.dir)*Math.PI/180);
+  ctx.translate(-localPlayer.x, -localPlayer.y);
 
   var i;
   for (i = 0; i < entities.length; i++) {
