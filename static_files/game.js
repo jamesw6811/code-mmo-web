@@ -35,7 +35,9 @@ function play() {
   $.getJSON('/getip.json', function(json) {
     playreqsuccess = 1;
     if (json['ipaddress']) {
-      init('http://' + json['ipaddress'] + ':8000/main');
+      var address = json['ipaddress'];
+      var port = json['port'];
+      init(address, port);
       animate();
     } else {
       alert('No Game Server Available.');
@@ -59,7 +61,7 @@ var canvas,     // Canvas DOM element
 /**************************************************
 ** GAME INITIALISATION
 **************************************************/
-function init(url) {
+function init(address, port) {
   // Declare the canvas and rendering context
   canvas = document.getElementById("gameCanvas");
   ctx = canvas.getContext("2d");
@@ -81,6 +83,7 @@ function init(url) {
   
   viewsockets = [];
   // Initialise socket connection
+  var url = makeServerConnectionURL(address, port);
   socket = io.connect(url, { forceNew: true });
   console.log("Initializing connection with "+url);
 
@@ -123,28 +126,40 @@ var setSocketHandlers = function() {
   // Player removed message received
   socket.on("remove entity", onRemoveEntity);
   
+  /*
   // Add viewserver message received
   socket.on("new viewserver", onNewViewServer);
+  */
   
   // Transfer servers message received
   socket.on("transfer server", onTransferServer);
 }
 
+function makeServerConnectionURL(address, port){
+  var portnum = Number(port) + 8000;
+  return 'http://' + address + ':' + portnum + '/main';
+}
+
 function onTransferServer(data){
+  /*
   var i = 0;
   for(i = 0; i < viewsockets.length; i++){
 	  viewsockets[i].disconnect();
   }
   viewsockets = [];
+  */
+  
   socket.removeAllListeners();
   socket.disconnect();
   
   // Initialise socket connection
-  socket = io.connect('http://' + data.address + ':8000/main', { forceNew: true });
+  var url = makeServerConnectionURL(data.address, data.port);
+  socket = io.connect(url, { forceNew: true });
   setSocketHandlers();
-  console.log("Initializing connection with "+data.address);
+  console.log("Initializing connection with "+url);
 }
 
+/*
 function onNewViewServer(data) {
 	console.log("New view server:"+data.address);
 	var viewsocket = io.connect('http://' + data.address + ':8000/view', { forceNew: true });
@@ -170,6 +185,7 @@ function onNewViewServer(data) {
 	
     viewsockets.push(viewsocket);
 }
+*/
 
 // Keyboard key down
 function onKeydown(e) {

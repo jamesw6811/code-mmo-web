@@ -214,7 +214,7 @@ class RequireServerHandler(webapp2.RequestHandler):
     logging.info('Received server require for grid:' + grid)
     
     loadresp = LoadInfo.GetServerLoadInfo(grid)
-    if not loadresp[LoadInfo.STATUS]:
+    if not loadresp:
       logging.info('No server so starting server for grid:'+str(grid))
       ComputeEngineController().AddServer(grid)
       loadresp = {LoadInfo.STATUS:LoadInfo.STATUS_LOADING}
