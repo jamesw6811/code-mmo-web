@@ -36,14 +36,21 @@ class FrontendHandler(webapp2.RequestHandler):
 
   def get(self):
     """Returns an available server's IP address in JSON format."""
-    ip = LoadInfo.getInstanceIpAddress("0,0")
-    if not ip:
-      ip = ''
-    self.response.out.write(json.dumps({'ipaddress': ip}))
-    IpAddressRequestLog(client_ip=self.request.remote_addr,
-                        server_ip=ip).put()
+    info = LoadInfo.GetServerLoadInfo("0,0")
+    if info:
+      if info[LoadInfo.STATUS] == LoadInfo.STATUS_UP:
+        ip = info[LoadInfo.IP_ADDRESS]
+        port = info[LoadInfo.PORT]
+        self.response.out.write(json.dumps({'status':'up', 'ipaddress': ip, 'port': port}))
+        IpAddressRequestLog(client_ip=self.request.remote_addr,
+                            server_ip=ip).put()
+      else:
+        self.response.out.write(json.dumps({'status':'loading'}))
+    else:
+      ComputeEngineController().AddServer("0,0")
+      self.response.out.write(json.dumps({'status':'loading'}))
 
-
+'''
 class AdminUiHandler(webapp2.RequestHandler):
   """URL handler class for admin UI page."""
 
@@ -116,7 +123,7 @@ class StatsUserJsonHandler(webapp2.RequestHandler):
       })
 
     self.response.out.write(json.dumps(load_entries))
-
+'''
 
 class StartUpHandler(webapp2.RequestHandler):
   """URL handler class for cluster start up."""
@@ -134,10 +141,10 @@ class TearDownHandler(webapp2.RequestHandler):
   def get(self):
     """Deletes Compute Engine cluster."""
     ComputeEngineController(decorator.credentials).TearDownCluster()
-    LoadInfo.RemoveAllInstances()
+    LoadInfo.RemoveAllInstancesAndServers()
 
 
-class RegisterHandler(webapp2.RequestHandler):
+class RegisterInstanceHandler(webapp2.RequestHandler):
   """URL handler class for IP address registration of the instance."""
 
   def post(self):
@@ -150,20 +157,34 @@ class RegisterHandler(webapp2.RequestHandler):
     logging.info('Instance created: %s', str(instance))
     external_ip = instance['networkInterfaces'][0][
         'accessConfigs'][0]['natIP']
-    gridstr = LoadInfo.RegisterInstanceIpAddress(name, external_ip)
-    gridxy = gridstr.split(",")
-    gridx = gridxy[0]
-    gridy = gridxy[1]
-    """Returns script to set up game server."""
+    LoadInfo.RegisterInstanceIpAddress(name, external_ip)
+    """Returns script to set up overarching server manager."""
     
     template = jinja_environment.get_template('setup-and-start-game.sh')
     self.response.out.write(template.render({
         'apphostname': app_identity.get_default_version_hostname(),
         'ip_address': self.request.remote_addr,
-        'gridx': gridx,
-        'gridy': gridy,
         'name': name
         }))
+        
+class RegisterServerHandler(webapp2.RequestHandler):
+  def post(self):
+    """ Adds the new server to server list by registering IP/port """
+    # TODO(user): Secure this URL by using Cloud Endpoints
+    name = self.request.get('instancename')
+    grid = self.request.get('grid')
+    port = self.request.get('port')
+    instance = ComputeEngineController().GetInstanceInfo(name)
+    if not instance:
+      logging.error("Instance name doesn't match existing instance: %s", name)
+      return
+    logging.info('Instance created: %s', str(instance))
+    external_ip = instance['networkInterfaces'][0][
+        'accessConfigs'][0]['natIP']
+  
+    LoadInfo.RegisterServerAddress(grid, external_ip, port)
+    resp = {'external_ip':external_ip, 'success':1}
+    self.response.out.write(json.dumps(resp))
 
 class ShutdownHandler(webapp2.RequestHandler):
   """URL handler class for deleting the instance."""
@@ -172,19 +193,69 @@ class ShutdownHandler(webapp2.RequestHandler):
     """Delete instance to managed cluster by registering IP address."""
     # TODO(user): Secure this URL by using Cloud Endpoints.
     name = self.request.get('name')
-    ComputeEngineController()._DeleteInstance(name)
-    self.response.out.write("Shutting down instance...");
-
-class LoadMonitorHandler(webapp2.RequestHandler):
+    ComputeEngineController().DeleteInstance(name)
+    self.response.out.write(json.dumps({'success':1}));
+    
+class ShutdownServerHandler(webapp2.RequestHandler):
+  
   def post(self):
     # TODO(user): Secure this URL by using Cloud Endpoints.
-    name = self.request.get('name')
+    grid = self.request.get('grid')
+    ComputeEngineController().RemoveServer(grid)
+    self.response.out.write(json.dumps({'success':1}))
+
+class RequireServerHandler(webapp2.RequestHandler):
+  """ Respond with information to connect to requested server or notify of loading status. 
+  Bring server up if required. """
+  
+  def post(self):
+    # TODO(user): Secure this URL by using Cloud Endpoints.
     grid = self.request.get('grid')
     
-    loadresp = LoadInfo.requestLoadInfo(name, grid)
-    if loadresp[LoadInfo.STATUS] == LoadInfo.STATUS_NONE:
-      logging.info('STATUS_NONE so starting server for grid:'+str(grid))
-      ComputeEngineController().IncreaseEngine(grid)
+    loadresp = LoadInfo.GetServerLoadInfo(grid)
+    if not loadresp[LoadInfo.STATUS]:
+      logging.info('No server so starting server for grid:'+str(grid))
+      ComputeEngineController().AddServer(grid)
+      loadresp = {LoadInfo.STATUS:LoadInfo.STATUS_LOADING}
+    self.response.out.write(json.dumps(loadresp))
+    
+class InstanceUpdateHandler(webapp2.RequestHandler):
+  """ Accept updates from instance server manager """
+  def post(self):
+    # TODO: Secure this URL by using Cloud Endpoints.
+    name = self.request.get('name')
+    instance = ComputeEngineController().GetInstanceInfo(name)
+    if not instance:
+      return
+    
+    load = int(self.request.get('load'))
+    logging.info('Instance update received: ' + str(instance) + ' with load: ' + str(load))
+    loadresp = LoadInfo.UpdateInstanceLoadInfo(name, load)
+    
+    self.response.out.write(json.dumps({"loadresp":loadresp}))
+
+class ServerUpdateHandler(webapp2.RequestHandler):
+  """ Accept updates from servers """
+  def post(self):
+    # TODO: Secure this URL by using Cloud Endpoints.
+    grid = self.request.get('grid')
+    num = int(self.request.get('numPlayers'))
+    
+    logging.info('Server update received: ' + str(grid) + ' with numPlayers: ' + str(num))
+    loadresp = LoadInfo.UpdateServerNumPlayers(grid, num)
+    
+    self.response.out.write(json.dumps({"loadresp":loadresp}))
+
+class HeartbeatHandler(webapp2.RequestHandler):
+  """URL handler class to perform cron task."""
+
+  def get(self):
+    # TODO(user): Secure this URL by using Cloud Endpoints.
+    # TODO: Rebalance load
+    # TODO: Make sure instances haven't crashed/stalled starting up: ComputeEngineController().checkResponse
+    logging.info("heartbeat")
+    '''
+    Possibly useful code:
     if loadresp[LoadInfo.STATUS] == LoadInfo.STATUS_LOADING:
       newresp = ComputeEngineController().checkResponse(loadresp[LoadInfo.LAST_RESP])
       logging.info('Loading latest resp:'+str(newresp))
@@ -194,39 +265,6 @@ class LoadMonitorHandler(webapp2.RequestHandler):
         LoadInfo.RemoveInstance(loadresp['name'])
       else:
         logging.info('No errors, still loading...')
-    self.response.out.write(json.dumps(loadresp))
-
-
-class LoadCheckerHandler(webapp2.RequestHandler):
-  """URL handler class to perform cron task."""
-
-  UPPER_THRESHOLD = 80
-  LOWER_THRESHOLD = 40
-  MIN_CLUSTER_SIZE = 5
-
-  def get(self):
-    """Checks average load level and adjusts cluster size if necessary.
-
-    If average load level of instances is more than upper threshold, increase
-    the number of instances by 20% of original size.  If average load level is
-    less than lower threshold and the current cluster size is larger than
-    minimum size, decrease the number of instances by 10%.  Since shortage
-    of server is more harmful than excessive instances, we increase more
-    rapidly than we decrease.
-
-    However, shutting down the instance is more complicated than adding
-    instances depending on game servers.  If client is not capable to auto-
-    reconnect, the game server must be drained before shutting down the
-    instance.  In this exsample, decrement of the instance is not implemented.
-    """
-    '''
-    cluster_size, average_load = LoadInfo.GetAverageLoad()
-    if cluster_size:
-      if average_load > self.UPPER_THRESHOLD:
-        ComputeEngineController().IncreaseEngine(cluster_size / 5 + 1)
-      elif (average_load < self.LOWER_THRESHOLD and
-            cluster_size > self.MIN_CLUSTER_SIZE):
-        ComputeEngineController().DecreaseEngine(cluster_size / 10 + 1)
     '''
     pass
 
@@ -235,16 +273,21 @@ class LoadCheckerHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication(
     [
         ('/getip.json', FrontendHandler),
-        ('/stats', AdminUiHandler),
-        ('/stats.json', StatsJsonHandler),
-        ('/stats-user.json', StatsUserJsonHandler),
+        #('/stats', AdminUiHandler),
+        #('/stats.json', StatsJsonHandler),
+        #('/stats-user.json', StatsUserJsonHandler),
         ('/startup', StartUpHandler),
         ('/teardown', TearDownHandler),
-        ('/register', RegisterHandler),
+        ('/register', RegisterInstanceHandler),
+        ('/register-server', RegisterServerHandler),
         ('/shutdown', ShutdownHandler),
-        ('/load', LoadMonitorHandler),
+        ('/shutdown-server', ShutdownServerHandler),
+        ('/require-server', RequireServerHandler),
+        # TODO: add load updating endpoints for instance/server loads
+        ('/update', InstanceUpdateHandler),
+        ('/update-server', ServerUpdateHandler),
         
-        ('/check-load', LoadCheckerHandler),
+        ('/heartbeat', HeartbeatHandler),
         (decorator.callback_path, decorator.callback_handler()),
     ],
     debug=True)

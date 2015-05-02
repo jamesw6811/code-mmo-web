@@ -1,12 +1,8 @@
 #!/usr/bin/python
 
 
-"""A program to check load level and report to Load Balancer.
-
-Periodically checks load level and report the result to AppEngine.
-The file is passed to Compute Engine instances as a start up script.
-At that time, template variables are filled with real values.
-"""
+"""A program to register the instance, download and execute the server script,
+and shutdown the instance when finished. """
 
 
 
@@ -18,47 +14,38 @@ import time
 import urllib
 
 
-class CpuUsageFetcher(object):
-
-  NUM_PLAYERS_FILE = 'num_players'
+class InstanceRunner(object):
+  
   REGISTER_URL = 'http://{{ hostname }}/register'
   SHUTDOWN_URL = 'http://{{ hostname }}/shutdown'
 
   def __init__(self):
     self.hostname = socket.gethostname()
-    self.prev_idle = 0
-    self.prev_total = 0
 
-  def Register(self):
+  def RegisterAndRun(self):
+    # Register
     response = urllib.urlopen(self.REGISTER_URL,
                    data=urllib.urlencode({'name': self.hostname}))
     local_script_file = 'startup-and-start.sh'
     f = open(local_script_file, 'w')
     f.write(response.read())
     f.close()
-    os.chmod(local_script_file, 0700)
+    os.chmod(local_script_file, 0o700)
+    
+    # Run (blocking)
     subprocess.call('./' + local_script_file)
+    
+    # Shutdown
+    print "Shutting down..."
     response = urllib.urlopen(self.SHUTDOWN_URL,
                    data=urllib.urlencode({'name': self.hostname}))
     print response
 
-'''
-  def Check(self):
-    """Checks CPU usage and reports to AppEngine load balancer."""
-    # 8 Players are the max.
-    load_level = 0;
-    print("Updating "+ self.UPDATE_URL)
-
-    # Send POST request to /load.
-    urllib.urlopen(self.UPDATE_URL,
-                   urllib.urlencode({'name': self.hostname,
-                                     'load': load_level}))
-'''
-
 def main():
-  print("Starting checkload.py. Set up game...")
-  cpu_fetcher = CpuUsageFetcher()
-  cpu_fetcher.Register()
+  print("Starting checkload.py. Getting hostname...")
+  runner = InstanceRunner()
+  print("Running startup script...")
+  runner.RegisterAndRun()
 
 
 if __name__ == '__main__':

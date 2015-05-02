@@ -13,7 +13,7 @@
 # limitations under the License.
 
 cron:
-- description: Periodically checks overall load level
-  url: /check-load
-  schedule: every 5 minutes
+- description: Periodically checks server health and load distribution
+  url: /heartbeat
+  schedule: every 1 minutes
 

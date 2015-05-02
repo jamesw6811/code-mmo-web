@@ -78,6 +78,9 @@ class ComputeEngineController(object):
   WORKER_NAME_PREFIX = 'gameserver-'
   USER_ID_KEY = 'userid'
   USER_CREDENTIALS_KEY = 'user_credentials'
+  
+  INSTANCE_MANAGER_PORT = 10000 # Port to use to connect to instance's manager once it is started
+  INSTANCE_MANAGER_ADDSERVER = "addserver" # Endpoint for adding a new server
 
   def __init__(self, credentials=None):
     """Initialize Client API object for Compute Engine manipulation.
@@ -225,7 +228,7 @@ class ComputeEngineController(object):
       status = response['status']
     return response
 
-  def _DeleteInstance(self, instance_name):
+  def DeleteInstance(self, instance_name):
     """Stops and deletes the instance specified by the name."""
     logging.info('Deleting instance %s', instance_name)
     LoadInfo.RemoveInstance(instance_name)
@@ -284,37 +287,44 @@ class ComputeEngineController(object):
     return instance_list
 
   def StartUpCluster(self):
-    """Initializes and start up Compute Engine cluster.
-
-    Records user ID and use it later by Taskqueue, Cron job handlers
-    and other handlers which is initiated by Compute Engine (therefore
-    without log in), to retrieve credential from Datastore.  It means
-    those tasks work under permission of the user who started the cluster.
-    """
     LoadInfo.InitializeTable()
-    self.IncreaseEngine("0,0")
+    self.IncreaseEngine()
+    
+  def AddServer(self, grid):
+    # If current instance has open room, use it
+    idle_instance = LoadInfo.GetIdleInstance()
+    if not (idle_instance == None):
+      ip_address = idle_instance[LoadInfo.IP_ADDRESS]
+      
+      # Send request to server manager to create new server
+      h = httplib2.Http()
+      data = {"grid" : grid};
+      resp, content = h.request("http://"+ip_address+":"+self.INSTANCE_MANAGER_PORT+"/"+self.INSTANCE_MANAGER_ADDSERVER, "POST", httplib2.urlencode(data))
+      
+      # Track new server 
+      LoadInfo.AddServer(grid, resp)
+      
+      # Re-assess load
+      self.assessLoad()
+    else: # Otherwise, start new instance
+      logging.error('Attempting to add server %s, but no idle instances!', grid)
+      
+  def RemoveServer(self, grid):
+    # TODO: Maybe confirm with server manager that actual process is ended in case servers need to be force-quit
+    LoadInfo.RemoveServer(grid)
 
   def TearDownCluster(self):
-    """Deletes all Compute Engine instances with our name prefix."""
     for instance in self.ListInstances():
-      self._DeleteInstance(instance['name'])
+      self.DeleteInstance(instance['name'])
 
-  def IncreaseEngine(self, grid):
+  def IncreaseEngine(self):
     instance_name = self.WORKER_NAME_PREFIX + str(uuid.uuid4())
     response = self._StartInstance(instance_name)
-    LoadInfo.AddInstance(instance_name, grid, response)
+    LoadInfo.AddInstance(instance_name, response)
 
   def DecreaseEngine(self, decrease_count):
-    """Reduces specified number of Compute Engine instances.
-
-    In reality, shutting down the game server is more complicated than
-    shutting down the Compute Engine instance.  It should first wait for
-    all users to finish their sessions before the shut down.
-    This example doesn't implement the shut down procedure.
-
-    Args:
-      decrease_count: Number of instances to decrease.
-    """
     # This is the placeholder for user's implementation.
     pass
-
+  
+  def assessLoad(self):
+    pass # Assess current load and remove instances with no load
