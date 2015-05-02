@@ -40,7 +40,7 @@ handlers:
   static_files: static_files/index.html
   upload: static_files/index\.html
 
-- url: /(startup|teardown|heartbeat)
+- url: /(startup|teardown|stats|heartbeat)
   script: handlers.app
   login: admin
 

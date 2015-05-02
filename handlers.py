@@ -50,7 +50,7 @@ class FrontendHandler(webapp2.RequestHandler):
       ComputeEngineController().AddServer("0,0")
       self.response.out.write(json.dumps({'status':'loading'}))
 
-'''
+
 class AdminUiHandler(webapp2.RequestHandler):
   """URL handler class for admin UI page."""
 
@@ -68,7 +68,7 @@ class AdminUiHandler(webapp2.RequestHandler):
     except AccessTokenRefreshError:
       self.redirect(decorator.authorize_url())
 
-
+'''
 class StatsJsonHandler(webapp2.RequestHandler):
   """URL handler class for stats list of the cluster."""
 
@@ -211,6 +211,7 @@ class RequireServerHandler(webapp2.RequestHandler):
   def post(self):
     # TODO(user): Secure this URL by using Cloud Endpoints.
     grid = self.request.get('grid')
+    logging.info('Received server require for grid:' + grid)
     
     loadresp = LoadInfo.GetServerLoadInfo(grid)
     if not loadresp[LoadInfo.STATUS]:
@@ -273,7 +274,7 @@ class HeartbeatHandler(webapp2.RequestHandler):
 app = webapp2.WSGIApplication(
     [
         ('/getip.json', FrontendHandler),
-        #('/stats', AdminUiHandler),
+        ('/stats', AdminUiHandler),
         #('/stats.json', StatsJsonHandler),
         #('/stats-user.json', StatsUserJsonHandler),
         ('/startup', StartUpHandler),
@@ -283,7 +284,6 @@ app = webapp2.WSGIApplication(
         ('/shutdown', ShutdownHandler),
         ('/shutdown-server', ShutdownServerHandler),
         ('/require-server', RequireServerHandler),
-        # TODO: add load updating endpoints for instance/server loads
         ('/update', InstanceUpdateHandler),
         ('/update-server', ServerUpdateHandler),
         

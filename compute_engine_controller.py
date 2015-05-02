@@ -30,6 +30,7 @@ import ast
 from apiclient.discovery import build
 from apiclient.errors import HttpError
 import httplib2
+from urllib import urlencode
 import jinja2
 from oauth2client.client import OAuth2Credentials
 
@@ -79,7 +80,7 @@ class ComputeEngineController(object):
   USER_ID_KEY = 'userid'
   USER_CREDENTIALS_KEY = 'user_credentials'
   
-  INSTANCE_MANAGER_PORT = 10000 # Port to use to connect to instance's manager once it is started
+  INSTANCE_MANAGER_PORT = '10000' # Port to use to connect to instance's manager once it is started
   INSTANCE_MANAGER_ADDSERVER = "addserver" # Endpoint for adding a new server
 
   def __init__(self, credentials=None):
@@ -299,7 +300,7 @@ class ComputeEngineController(object):
       # Send request to server manager to create new server
       h = httplib2.Http()
       data = {"grid" : grid};
-      resp, content = h.request("http://"+ip_address+":"+self.INSTANCE_MANAGER_PORT+"/"+self.INSTANCE_MANAGER_ADDSERVER, "POST", httplib2.urlencode(data))
+      resp, content = h.request("http://"+ip_address+":"+self.INSTANCE_MANAGER_PORT+"/"+self.INSTANCE_MANAGER_ADDSERVER, "POST", urlencode(data))
       
       # Track new server 
       LoadInfo.AddServer(grid, resp)
