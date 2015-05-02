@@ -9,8 +9,8 @@ function Player(){
 	this.dir = 0;
     this.graphic = 1;       
     this.moveAmount = 2;
-    this.turnAmount = 5;
-	this.layer = 0;
+    this.turnAmount = 0.04;
+	this.layer = 5;
 	
 	this.clientid = null; // Reserved for setting
 	this.socket = null;
@@ -24,11 +24,11 @@ Player.prototype.updateKeys = function(keys) {
 
         // Up key takes priority over down
         if (keys.up) {
-            this.y -= this.moveAmount*Math.sin(this.dir*Math.PI/180);
-            this.x -= this.moveAmount*Math.cos(this.dir*Math.PI/180);
+            this.y -= this.moveAmount*Math.sin(this.dir);
+            this.x -= this.moveAmount*Math.cos(this.dir);
         } else if (keys.down) {
-            this.y += this.moveAmount*Math.sin(this.dir*Math.PI/180);
-            this.x += this.moveAmount*Math.cos(this.dir*Math.PI/180);
+            this.y += this.moveAmount*Math.sin(this.dir);
+            this.x += this.moveAmount*Math.cos(this.dir);
         };
 
         // Left key takes priority over right
@@ -37,7 +37,7 @@ Player.prototype.updateKeys = function(keys) {
         } else if (keys.right) {
             this.dir += this.turnAmount;
         };
-        this.turnAmount = this.turnAmount % 360; // Restrict to angle
+        this.dir = this.dir % (2*Math.PI); // Restrict to angle
 
         return (prevX != this.x || prevY != this.y || prevDir != this.dir) ? true : false;
     };

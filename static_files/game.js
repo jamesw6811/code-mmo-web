@@ -38,7 +38,6 @@ function play() {
       var address = json['ipaddress'];
       var port = json['port'];
       init(address, port);
-      animate();
     } else {
       alert('No Game Server Available.');
     }
@@ -49,39 +48,38 @@ function play() {
 /**************************************************
 ** GAME VARIABLES
 **************************************************/
-var canvas,     // Canvas DOM element
-  ctx,      // Canvas rendering context
+var stage, // Main container
+  renderer, // PIXI renderer
   keys,     // Keyboard input
   localPlayer,  // Local player
   entities,  // Remote players
   socket, // Main socket connection
-  viewsockets;     // Socket connections for extra views
+  sprites, // Lookup of sprites by id
+  textures, // Texture lookup
+  WIDTH = 800,
+  HEIGHT = 600,
+  FORGET_DISTANCE = 2000; 
 
 
 /**************************************************
 ** GAME INITIALISATION
 **************************************************/
 function init(address, port) {
-  // Declare the canvas and rendering context
-  canvas = document.getElementById("gameCanvas");
-  ctx = canvas.getContext("2d");
-
-  // Maximise the canvas
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // Declare the PIXI renderer and stage
+	renderer = PIXI.autoDetectRenderer(WIDTH, HEIGHT, {backgroundColor : 0x1099bb});
+	document.body.appendChild(renderer.view);
+	stage = new PIXI.Container();
+	
+	loadTextures();
 
   // Initialise keyboard controls
   keys = new Keys();
 
-  // Initialise the local player
-  localPlayer = new Player();
-  localPlayer.id = null;
-
   // Initialise array
   entities = [];
-  entities.push(localPlayer);
+  sprites = {};
   
-  viewsockets = [];
+  
   // Initialise socket connection
   var url = makeServerConnectionURL(address, port);
   socket = io.connect(url, { forceNew: true });
@@ -91,7 +89,19 @@ function init(address, port) {
   // Start listening for events
   setEventHandlers();
   setSocketHandlers();
+  
+  animate();
+  distanceGarbageCollect();
 };
+
+function loadTextures() {
+  textures = {};
+  // create a texture from an image path
+  textures[1] = PIXI.Texture.fromImage('img/fighter.png');
+  textures[3] = PIXI.Texture.fromImage('img/fighter.png');
+  textures[10000] = PIXI.Texture.fromImage('img/grass.png');
+  textures[10001] = PIXI.Texture.fromImage('img/dirt.png');
+}
 
 
 /**************************************************
@@ -203,15 +213,17 @@ function onKeyup(e) {
 
 // Browser window resize
 function onResize(e) {
-  // Maximise the canvas
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
 };
 
 // Socket connected
 function onSocketConnected() {
-  console.log("Connected to socket server, sending id:"+localPlayer.id);
-  socket.emit("new player", {id : localPlayer.id});
+  if (localPlayer){
+    console.log("Switched to new socket server, sending id:"+localPlayer.id);
+    socket.emit("new player", {id : localPlayer.id});
+  } else {
+    console.log("Connected to first socket server, sending new player req.");
+    socket.emit("new player", {id : null});
+  }
 };
 
 function onSocketDisconnect() {
@@ -225,57 +237,110 @@ function onNewEntity(data) {
 };
 
 function onMoveEntity(data) {
+  if (data.id == localPlayer.id)return;
+  
   var moveEntity = entityById(data.id);
 
   if (!moveEntity) {
-	addEntity(data);
+	  addEntity(data);
   } else {
-	moveEntity.updateFromEmit(data);
+    updateEntity(moveEntity, data);
   }
 
   // Update Entity position
 };
 
 function onUpdatePlayer(player) {
-	localPlayer.updateFromEmit(player);
-	localPlayer.id = player.id;
-	console.log(player);
+  if (!localPlayer){
+    localPlayer = new Player();
+	  localPlayer.id = player.id;
+	  localPlayer.updateFromEmit(player);
+	  entities.push(localPlayer);
+	  
+  	// Add to graphics
+  	var texture = getGraphicTexture(localPlayer.graphic);
+    var sprite = new PIXI.Sprite(texture);
+    sprite.anchor.x = 0.5;
+    sprite.anchor.y = 0.5;
+    sprite.height = 50;
+    sprite.width = 50;
+    sprites[localPlayer.id] = sprite;
+    stage.addChild(sprite);
+    setSpriteLocation(sprite, localPlayer);
+  } else {
+    updateEntity(localPlayer, player);
+  }
+	//console.log(player);
+}
+
+function updateEntity(moveEntity, data) {
+	  moveEntity.updateFromEmit(data);
+	  
+	  var sprite = sprites[moveEntity.id];
+	  setSpriteLocation(sprite, moveEntity);
+	  setSpriteTexture(sprite, moveEntity);
 }
 
 function addEntity(data) {
-    var ent = new Entity(data.id);
+  var ent = new Entity(data.id);
 	ent.updateFromEmit(data);
-    entities.push(ent);
-	entities.sort(function(enta, entb){return entb.layer-enta.layer});
+  entities.push(ent);
+	
+	// Add to graphics
+	var texture = getGraphicTexture(ent.graphic);
+  var sprite = new PIXI.Sprite(texture);
+  sprite.height = 50;
+  sprite.width = 50;
+  sprite.anchor.x = 0.5;
+  sprite.anchor.y = 0.5;
+  sprites[ent.id] = sprite;
+  stage.addChild(sprite);
+  setSpriteLocation(sprite, ent);
 }
 
-// Remove player
 function onRemoveEntity(data) {
   var removeEntity = entityById(data.id);
-
   // Player not found
   if (!removeEntity) {
     console.log("Entity not found: "+data.id);
     return;
-  };
-
+  }
   // Remove player from array
   entities.splice(entities.indexOf(removeEntity), 1);
+  
+  // Remove from graphics
+  var sprite = sprites[removeEntity.id];
+  stage.removeChild(sprite);
+  delete sprites[removeEntity.id];
 };
 
+function getGraphicTexture(graphic) {
+	if (graphic in textures){
+	  return textures[graphic];
+	} else {
+	  return textures[1]; // Default texture :P
+	}
+}
 
+function setSpriteTexture(sprite, ent) {
+  sprite.texture = getGraphicTexture(ent.graphic);
+}
 
-/**************************************************
-** GAME ANIMATION LOOP
-**************************************************/
-function animate() {
-  update();
-  draw();
-
-  // Request a new animation frame using Paul Irish's shim
-  window.requestAnimFrame(animate);
-};
-
+function setSpriteLocation(sprite, ent) {
+  sprite.position.x = ent.x;
+  sprite.position.y = ent.y;
+  if (ent.dir) {
+    sprite.rotation = ent.dir - Math.PI/2;
+  } else {
+    sprite.rotation = -Math.PI/2;
+  }
+  if (sprite.z && sprite.z == ent.layer){
+    // Ignore if z is staying the same
+  } else {
+    sprite.z = ent.layer;
+    stage.children.sort(depthCompare); // Sort children to put right things on top
+  }
+}
 
 /**************************************************
 ** GAME UPDATE
@@ -285,29 +350,52 @@ function update() {
   if (localPlayer.updateKeys(keys)) {
     // Send local player data to the game server
     socket.emit("move player", {x: localPlayer.x, y: localPlayer.y, dir: localPlayer.dir});
-  };
-};
+    var playerSprite = sprites[localPlayer.id];
+    setSpriteLocation(playerSprite, localPlayer);
+  }
+}
+
+function distanceGarbageCollect(){
+  if (localPlayer){
+    var toRemove = [];
+    // Check for entities out of range
+    for (var i = 0; i < entities.length; i++){
+      var xDis = Math.abs(entities[i].x-localPlayer.x);
+      var yDis = Math.abs(entities[i].y-localPlayer.y);
+      if (xDis > FORGET_DISTANCE || yDis > FORGET_DISTANCE){
+        toRemove.push(entities[i]);
+      }
+    }
+    // Remove out of range entities
+    for (var i = 0; i < toRemove.length; i++){
+      onRemoveEntity(toRemove[i]);
+    }
+  }
+  setTimeout(distanceGarbageCollect, 2000);
+}
 
 
 /**************************************************
 ** GAME DRAW
 **************************************************/
-function draw() {
-
-  // Wipe the canvas clean
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
-  
-  // Transform and rotate to player view
-  ctx.translate(canvas.width/2, canvas.height/2);
-  ctx.rotate((90-localPlayer.dir)*Math.PI/180);
-  ctx.translate(-localPlayer.x, -localPlayer.y);
-
-  var i;
-  for (i = 0; i < entities.length; i++) {
-    entities[i].draw(ctx);
-  };
-  ctx.restore();
+function animate() {
+  requestAnimationFrame(animate);
+  if (localPlayer){
+    update(); // TODO: wrap in time variable to make movement speed constant with FPS
+    
+    
+    stage.rotation = -localPlayer.dir+Math.PI/2;
+    stage.pivot.x = localPlayer.x;
+    stage.pivot.y = localPlayer.y;
+    stage.x = WIDTH/2;
+    stage.y = HEIGHT/2;
+    
+    // render the container
+    renderer.render(stage);
+  } else {
+    // TODO: Render loading container
+    renderer.render(stage);
+  }
 };
 
 
@@ -323,3 +411,14 @@ function entityById(id) {
   
   return false;
 };
+
+function depthCompare(a,b) {
+  if (a.z < b.z)
+     return -1;
+  if (a.z > b.z)
+    return 1;
+  return 0;
+}
+
+
+
