@@ -39,6 +39,11 @@ class LoginToken(db.Model):
   # Use token as key_name
   expiration = db.DateTimeProperty()
   user_id = db.StringProperty()
+  
+class Entity(db.Model):
+  user_id = db.StringProperty()
+  gridkey = db.StringProperty()
+  __type = db.StringProperty()
 
 class GamePageHandler(webapp2.RequestHandler):
   def get(self):
@@ -59,7 +64,26 @@ class FrontendHandler(webapp2.RequestHandler):
     user = users.get_current_user()
     # TODO: Check to make sure game account is up to date/paid for/whatever.
     
-    info = LoadInfo.GetServerLoadInfo("0,0")
+    # Determine what server to transfer player to
+    servertoload = ""
+    q = Entity.all()
+    q.filter("user_id =", user.user_id())
+    q.filter("__type =", "Player")
+    userplayers = []
+    for userplayer in q.run(limit=5):
+      userplayers.append(userplayer)
+    if len(userplayers) > 1:
+      logging.error("UserID has more than one player")
+      return
+    elif len(userplayers) == 0:
+      logging.info("No current players, attaching to root")
+      servertoload = "0,0"
+    else:
+      servertoload = userplayers[0].gridkey
+      
+    logging.info("Loading server "+servertoload+" for "+user.nickname())
+    
+    info = LoadInfo.GetServerLoadInfo(servertoload)
     if info:
       if info[LoadInfo.STATUS] == LoadInfo.STATUS_UP:
         ip = info[LoadInfo.IP_ADDRESS]
@@ -77,7 +101,7 @@ class FrontendHandler(webapp2.RequestHandler):
       else:
         self.response.out.write(json.dumps({'status':'loading'}))
     else:
-      ComputeEngineController().AddServer("0,0")
+      ComputeEngineController().AddServer(servertoload)
       self.response.out.write(json.dumps({'status':'loading'}))
 
 
@@ -284,6 +308,7 @@ class HeartbeatHandler(webapp2.RequestHandler):
     # TODO(user): Secure this URL by using Cloud Endpoints.
     # TODO: Rebalance load
     # TODO: Make sure instances haven't crashed/stalled starting up: ComputeEngineController().checkResponse
+    # TODO: Clear old LoginTokens (1 day?)
     logging.info("heartbeat")
     '''
     Possibly useful code:

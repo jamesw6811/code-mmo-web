@@ -38,7 +38,7 @@ Player.prototype.updateKeys = function(keys) {
             this.dir += this.turnAmount;
         };
         this.dir = this.dir % (2*Math.PI); // Restrict to angle
-
+        
         return (prevX != this.x || prevY != this.y || prevDir != this.dir) ? true : false;
     };
 

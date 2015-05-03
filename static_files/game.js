@@ -240,7 +240,7 @@ function onNewEntity(data) {
 };
 
 function onMoveEntity(data) {
-  if (data.id == localPlayer.id)return;
+  if (localPlayer && (data.id == localPlayer.id))return;
   
   var moveEntity = entityById(data.id);
 
@@ -254,6 +254,7 @@ function onMoveEntity(data) {
 };
 
 function onUpdatePlayer(player) {
+  console.log(player);
   if (!localPlayer){
     localPlayer = new Player();
 	  localPlayer.id = player.id;
@@ -273,15 +274,16 @@ function onUpdatePlayer(player) {
   } else {
     updateEntity(localPlayer, player);
   }
-	//console.log(player);
+  console.log("Update:");
+	console.log(player);
 }
 
 function updateEntity(moveEntity, data) {
 	  moveEntity.updateFromEmit(data);
 	  
 	  var sprite = sprites[moveEntity.id];
-	  setSpriteLocation(sprite, moveEntity);
 	  setSpriteTexture(sprite, moveEntity);
+	  setSpriteLocation(sprite, moveEntity);
 }
 
 function addEntity(data) {
