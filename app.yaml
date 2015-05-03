@@ -43,6 +43,14 @@ handlers:
 - url: /(startup|teardown|stats|heartbeat)
   script: handlers.app
   login: admin
+  
+- url: /game
+  script: handlers.app
+  login: required
+  
+- url: /getip.json
+  script: handlers.app
+  login: required
 
 - url: .*
   script: handlers.app

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Game</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="common.css" type="text/css" />
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="game.css">
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="pixi.js"></script>
+    <script src="requestAnimationFrame.js"></script>
+    <script src="Keys.js"></script>
+    <script src="Entity.js"></script>
+    <script src="Player.js"></script>
+    <script src="game.js"></script>
+  </head>
+
+  <body>
+    <div class="clear-both"></div>
+
+    <div class="main-contents">
+      Hello, {{ nickname }}. Controls are arrow keys. <br>
+      <a href="{{ logouturl }}">Logout</a><br>
+    </div>
+
+  </body>
+</html>

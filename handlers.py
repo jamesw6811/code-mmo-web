@@ -2,9 +2,12 @@ import logging
 import os
 
 import jinja2
+import uuid
+import datetime
 from oauth2client.anyjson import simplejson as json
 from oauth2client.appengine import OAuth2Decorator
 from oauth2client.client import AccessTokenRefreshError
+from google.appengine.api import users
 import webapp2
 
 from compute_engine_controller import ComputeEngineController
@@ -16,6 +19,9 @@ from google.appengine.api import app_identity
 
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader('worker'))
+    
+jinja_environment_html = jinja2.Environment(
+    loader=jinja2.FileSystemLoader('static_files'))
 
 
 decorator = OAuth2Decorator(
@@ -23,25 +29,49 @@ decorator = OAuth2Decorator(
     client_secret = 'DPcR1rc9oZwBBuf6fzgj231a',
     scope=ComputeEngineController.SCOPE)
 
-
 class IpAddressRequestLog(db.Model):
   """Datastore schema for game server IP address retrieval log."""
   client_ip = db.StringProperty()
   server_ip = db.StringProperty()
   timestamp = db.DateTimeProperty(auto_now=True)
+  
+class LoginToken(db.Model):
+  # Use token as key_name
+  expiration = db.DateTimeProperty()
+  user_id = db.StringProperty()
 
+class GamePageHandler(webapp2.RequestHandler):
+  def get(self):
+    user = users.get_current_user()
+    
+    if user:
+      template = jinja_environment_html.get_template('game.html')
+      resp = template.render({"nickname": user.nickname(), "logouturl":users.create_logout_url('/')})
+    else:
+      resp = ('<html><body><a href="%s">Sign in or register</a>.</body></html>' % users.create_login_url('/'))
+    
+    self.response.out.write(resp)
 
 class FrontendHandler(webapp2.RequestHandler):
   """URL handler class for IP address request."""
 
   def get(self):
-    """Returns an available server's IP address in JSON format."""
+    user = users.get_current_user()
+    # TODO: Check to make sure game account is up to date/paid for/whatever.
+    
     info = LoadInfo.GetServerLoadInfo("0,0")
     if info:
       if info[LoadInfo.STATUS] == LoadInfo.STATUS_UP:
         ip = info[LoadInfo.IP_ADDRESS]
         port = info[LoadInfo.PORT]
-        self.response.out.write(json.dumps({'status':'up', 'ipaddress': ip, 'port': port}))
+        
+        # Generate login token
+        token_key = uuid.uuid4().hex;
+        expiration_time = datetime.datetime.now()+datetime.timedelta(seconds = 20);
+        LoginToken(key_name=token_key, expiration=expiration_time, user_id=user.user_id()).put();
+        
+        # Send IP and token info
+        self.response.out.write(json.dumps({'status':'up', 'ipaddress': ip, 'port': port, 'token': token_key}))
         IpAddressRequestLog(client_ip=self.request.remote_addr,
                             server_ip=ip).put()
       else:
@@ -273,6 +303,7 @@ class HeartbeatHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication(
     [
+        ('/game', GamePageHandler),
         ('/getip.json', FrontendHandler),
         ('/stats', AdminUiHandler),
         #('/stats.json', StatsJsonHandler),

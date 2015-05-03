@@ -4,9 +4,7 @@
 
 
 $(document).ready(function(){
-  $("p").click(function(){
    play();
-  });
 });
 
 /**
@@ -37,9 +35,11 @@ function play() {
     if (json['ipaddress']) {
       var address = json['ipaddress'];
       var port = json['port'];
+      logintoken = json['token'];
       init(address, port);
     } else {
-      alert('No Game Server Available.');
+      console.log("Server down. Trying to reconnect...");
+      setTimeout(function(){play();}, 5000);
     }
   });
 }
@@ -56,6 +56,7 @@ var stage, // Main container
   socket, // Main socket connection
   sprites, // Lookup of sprites by id
   textures, // Texture lookup
+  logintoken,
   WIDTH = 800,
   HEIGHT = 600,
   FORGET_DISTANCE = 2000; 
@@ -221,8 +222,10 @@ function onSocketConnected() {
     console.log("Switched to new socket server, sending id:"+localPlayer.id);
     socket.emit("new player", {id : localPlayer.id});
   } else {
-    console.log("Connected to first socket server, sending new player req.");
-    socket.emit("new player", {id : null});
+    var newPlayerReq = {id : null, token : logintoken};
+    console.log("Connected to first socket server, sending new player req:");
+    console.log(newPlayerReq);
+    socket.emit("new player", newPlayerReq);
   }
 };
 
