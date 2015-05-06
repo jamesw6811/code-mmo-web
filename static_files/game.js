@@ -269,6 +269,15 @@ function onUpdatePlayer(player) {
     sprite.height = 50;
     sprite.width = 50;
     sprites[localPlayer.id] = sprite;
+    
+    // Clicking behavior
+    sprite.interactive = true;
+    var onClick = function(event){
+      onClickEntity(localPlayer, event);
+    };
+    sprite.on('mousedown', onClick);
+    sprite.on('touchstart', onClick);
+    
     stage.addChild(sprite);
     setSpriteLocation(sprite, localPlayer);
   } else {
@@ -301,6 +310,14 @@ function addEntity(data) {
   sprites[ent.id] = sprite;
   stage.addChild(sprite);
   setSpriteLocation(sprite, ent);
+    
+  // Clicking behavior
+  sprite.interactive = true;
+  var onClick = function(event){
+    onClickEntity(ent, event);
+  };
+  sprite.on('mousedown', onClick);
+  sprite.on('touchstart', onClick);
 }
 
 function onRemoveEntity(data) {
@@ -350,15 +367,47 @@ function setSpriteLocation(sprite, ent) {
 /**************************************************
 ** GAME UPDATE
 **************************************************/
+function onClickEntity(ent, event) {
+  socket.emit("player primary action", {id: ent.id});
+  console.log("Clicked on:" + ent.id);
+  console.log(event);
+}
+
 function update() {
   // Update local player and check for change
-  if (localPlayer.updateKeys(keys)) {
+  if (updateKeys(keys)) {
     // Send local player data to the game server
     socket.emit("move player", {x: localPlayer.x, y: localPlayer.y, dir: localPlayer.dir});
     var playerSprite = sprites[localPlayer.id];
     setSpriteLocation(playerSprite, localPlayer);
   }
 }
+
+var updateKeys = function(keys) {
+        // Previous position
+        var prevX = localPlayer.x,
+            prevY = localPlayer.y,
+            prevDir = localPlayer.dir;
+
+        // Up key takes priority over down
+        if (keys.up) {
+            localPlayer.y -= localPlayer.moveAmount*Math.sin(localPlayer.dir);
+            localPlayer.x -= localPlayer.moveAmount*Math.cos(localPlayer.dir);
+        } else if (keys.down) {
+            localPlayer.y += localPlayer.moveAmount*Math.sin(localPlayer.dir);
+            localPlayer.x += localPlayer.moveAmount*Math.cos(localPlayer.dir);
+        }
+
+        // Left key takes priority over right
+        if (keys.left) {
+            localPlayer.dir -= localPlayer.turnAmount;
+        } else if (keys.right) {
+            localPlayer.dir += localPlayer.turnAmount;
+        }
+        localPlayer.dir = localPlayer.dir % (2*Math.PI); // Restrict to angle
+        
+        return (prevX != localPlayer.x || prevY != localPlayer.y || prevDir != localPlayer.dir) ? true : false;
+};
 
 function distanceGarbageCollect(){
   if (localPlayer){

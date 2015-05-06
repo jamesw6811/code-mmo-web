@@ -16,31 +16,6 @@ function Player(){
 	this.socket = null;
 }
 
-Player.prototype.updateKeys = function(keys) {
-        // Previous position
-        var prevX = this.x,
-            prevY = this.y,
-            prevDir = this.dir;
-
-        // Up key takes priority over down
-        if (keys.up) {
-            this.y -= this.moveAmount*Math.sin(this.dir);
-            this.x -= this.moveAmount*Math.cos(this.dir);
-        } else if (keys.down) {
-            this.y += this.moveAmount*Math.sin(this.dir);
-            this.x += this.moveAmount*Math.cos(this.dir);
-        };
-
-        // Left key takes priority over right
-        if (keys.left) {
-            this.dir -= this.turnAmount;
-        } else if (keys.right) {
-            this.dir += this.turnAmount;
-        };
-        this.dir = this.dir % (2*Math.PI); // Restrict to angle
-        
-        return (prevX != this.x || prevY != this.y || prevDir != this.dir) ? true : false;
-    };
 
 //Player.prototype.draw = function(ctx) {
 //		ctx.fillStyle = "#888888";
