@@ -99,7 +99,9 @@ function loadTextures() {
   textures = {};
   // create a texture from an image path
   textures[1] = PIXI.Texture.fromImage('img/fighter.png');
-  textures[3] = PIXI.Texture.fromImage('img/fighter.png');
+  textures[3] = PIXI.Texture.fromImage('img/monster.png');
+  textures[100] = PIXI.Texture.fromImage('img/woodenbox.png');
+  textures[1000] = PIXI.Texture.fromImage('img/construction.png');
   textures[10000] = PIXI.Texture.fromImage('img/grass.png');
   textures[10001] = PIXI.Texture.fromImage('img/dirt.png');
 }
