@@ -131,7 +131,7 @@ var setSocketHandlers = function() {
   socket.on("new entity", onNewEntity);
 
   // Player move message received
-  socket.on("move entity", onMoveEntity);
+  socket.on("update entity", onMoveEntity);
   
   // Update local player message received
   socket.on("update player", onUpdatePlayer);
