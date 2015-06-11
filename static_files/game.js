@@ -54,9 +54,11 @@ var stage, // Main container
   localPlayer,  // Local player
   entities,  // Remote players
   socket, // Main socket connection
+  ondecksockets, // Sockets of servers on-deck for quick movement between them
   sprites, // Lookup of sprites by id
   textures, // Texture lookup
   logintoken,
+  selectedAction,
   WIDTH = 800,
   HEIGHT = 600,
   FORGET_DISTANCE = 2000; 
@@ -75,6 +77,7 @@ function init(address, port) {
 
   // Initialise keyboard controls
   keys = new Keys();
+  selectedAction = 0;
 
   // Initialise array
   entities = [];
@@ -85,6 +88,7 @@ function init(address, port) {
   var url = makeServerConnectionURL(address, port);
   socket = io.connect(url, { forceNew: true });
   console.log("Initializing connection with "+url);
+  ondecksockets = {};
 
 
   // Start listening for events
@@ -102,6 +106,7 @@ function loadTextures() {
   textures[3] = PIXI.Texture.fromImage('img/monster.png');
   textures[100] = PIXI.Texture.fromImage('img/woodenbox.png');
   textures[1000] = PIXI.Texture.fromImage('img/construction.png');
+  textures[1001] = PIXI.Texture.fromImage('img/construction.png'); // Melee hit
   textures[10000] = PIXI.Texture.fromImage('img/grass.png');
   textures[10001] = PIXI.Texture.fromImage('img/dirt.png');
 }
@@ -146,6 +151,9 @@ var setSocketHandlers = function() {
   
   // Transfer servers message received
   socket.on("transfer server", onTransferServer);
+  
+  // Update on deck server to speed up transfers
+  socket.on("update ondeck", onUpdateOnDeckServers);
 }
 
 function makeServerConnectionURL(address, port){
@@ -153,23 +161,40 @@ function makeServerConnectionURL(address, port){
   return 'http://' + address + ':' + portnum + '/main';
 }
 
-function onTransferServer(data){
-  /*
-  var i = 0;
-  for(i = 0; i < viewsockets.length; i++){
-	  viewsockets[i].disconnect();
+function onUpdateOnDeckServers(data){
+  var servers = data.servers;
+  var newondeck = {};
+  // Remove repeated ondeck servers from ondecksockets and transfer to newondeck, connect to new ondeck servers
+  for (var i = 0; i < servers.length; i++){ 
+    var url = makeServerConnectionURL(servers[i].address, servers[i].port);
+    if (url in ondecksockets){
+      newondeck[url] = ondecksockets[url];
+      delete ondecksockets[url];
+      console.log("Already had this on deck socket:"+url);
+    } else {
+      newondeck[url] = io.connect(url, { forceNew: true });
+    }
   }
-  viewsockets = [];
-  */
+  // TODO: Disconnect from old ondeck servers, possibly by iterating through remaining ondecksockets
+  ondecksockets = newondeck;
   
-  socket.removeAllListeners();
-  socket.disconnect();
+}
+
+function onTransferServer(data){
+  socket.removeAllListeners(); // Remove listeners from old server, stay connected in case is still on-deck
   
   // Initialise socket connection
   var url = makeServerConnectionURL(data.address, data.port);
-  socket = io.connect(url, { forceNew: true });
-  setSocketHandlers();
-  console.log("Initializing connection with "+url);
+  if (url in ondecksockets){
+    socket = ondecksockets[url];
+    setSocketHandlers();
+    onSocketConnected();
+    console.log("Using on-deck for "+url);
+  } else {
+    socket = io.connect(url, { forceNew: true });
+    setSocketHandlers();
+    console.log("Initializing connection with "+url);
+  }
 }
 
 /*
@@ -370,9 +395,11 @@ function setSpriteLocation(sprite, ent) {
 ** GAME UPDATE
 **************************************************/
 function onClickEntity(ent, event) {
-  socket.emit("player primary action", {id: ent.id});
-  console.log("Clicked on:" + ent.id);
+  socket.emit("player primary action", {id: ent.id, x: event.x, y: event.y, actionid: selectedAction});
+  console.log("Clicked on:");
+  console.log(ent);
   console.log(event);
+  console.log("action:"+selectedAction);
 }
 
 function update() {
@@ -408,6 +435,23 @@ var updateKeys = function(keys) {
         }
         localPlayer.dir = localPlayer.dir % (2*Math.PI); // Restrict to angle
         
+        // Look at pressed keys
+        var pressed = keys.pressed;
+        for (var i = 0; i < pressed.length; i++){
+          var pressedKey = pressed[i];
+          switch(pressedKey){
+            case "w_key":
+              selectedAction = 1;
+              console.log("wkey pressed");
+            break;
+            case "s_key":
+              selectedAction = 0;
+              console.log("skey pressed");
+            break;
+          }
+        }
+        keys.resetPressed();
+        
         return (prevX != localPlayer.x || prevY != localPlayer.y || prevDir != localPlayer.dir) ? true : false;
 };
 
@@ -416,9 +460,9 @@ function distanceGarbageCollect(){
     var toRemove = [];
     // Check for entities out of range
     for (var i = 0; i < entities.length; i++){
-      var xDis = Math.abs(entities[i].x-localPlayer.x);
-      var yDis = Math.abs(entities[i].y-localPlayer.y);
-      if (xDis > FORGET_DISTANCE || yDis > FORGET_DISTANCE){
+      var xDis = Math.pow(entities[i].x-localPlayer.x, 2);
+      var yDis = Math.pow(entities[i].y-localPlayer.y, 2);
+      if ((xDis+yDis)>localPlayer.viewDistanceSquared){
         toRemove.push(entities[i]);
       }
     }
@@ -427,7 +471,7 @@ function distanceGarbageCollect(){
       onRemoveEntity(toRemove[i]);
     }
   }
-  setTimeout(distanceGarbageCollect, 2000);
+  setTimeout(distanceGarbageCollect, 1000);
 }
 
 
