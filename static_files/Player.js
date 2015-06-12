@@ -11,6 +11,7 @@ function Player(){
     this.moveAmount = 2;
     this.turnAmount = 0.04;
 	this.layer = 5;
+    this.viewDistanceSquared = Math.pow(500, 2);
 	
 	this.clientid = null; // Reserved for setting
 	this.socket = null;
