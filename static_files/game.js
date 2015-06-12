@@ -175,7 +175,9 @@ function onUpdateOnDeckServers(data){
       newondeck[url] = io.connect(url, { forceNew: true });
     }
   }
-  // TODO: Disconnect from old ondeck servers, possibly by iterating through remaining ondecksockets
+  for (var decksocket in ondecksockets){ // Disconnect from non-needed sockets
+    if(ondecksockets[decksocket] != socket)ondecksockets[decksocket].disconnect();
+  }
   ondecksockets = newondeck;
   
 }
