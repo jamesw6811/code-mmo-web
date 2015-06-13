@@ -185,6 +185,10 @@ class StartUpHandler(webapp2.RequestHandler):
   @decorator.oauth_required
   def get(self):
     """Starts up initial Compute Engine cluster."""
+    instances = LoadInfo.GetAllInstances()
+    if instances:
+      raise SystemError("Instances already loaded, teardown first.");
+      
     ComputeEngineController(decorator.credentials).StartUpCluster()
 
 
