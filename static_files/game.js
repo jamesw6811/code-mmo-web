@@ -188,7 +188,7 @@ function onUpdateOnDeckServers(data) {
     }
   }
   for (var decksocket in ondecksockets) { // Disconnect from non-needed sockets
-    ondecksockets[decksocket].disconnect();
+    if(ondecksockets[decksocket]!=socket)ondecksockets[decksocket].disconnect();
   }
   ondecksockets = newondeck;
 
@@ -487,7 +487,7 @@ var updateKeys = function(keys) {
   else if (keys.right) {
     localPlayer.dir += localPlayer.turnAmount * timedelta;
   }
-  localPlayer.dir = localPlayer.dir % (2 * Math.PI); // Restrict to angle
+  localPlayer.dir = mod(localPlayer.dir, (2 * Math.PI)); // Restrict to angle
 
   // Look at pressed keys
   var pressed = keys.pressed;
@@ -573,4 +573,8 @@ function depthCompare(a, b) {
   if (a.z > b.z)
     return 1;
   return 0;
+}
+
+function mod(n, m) {
+  return ((n % m) + m) % m;
 }
