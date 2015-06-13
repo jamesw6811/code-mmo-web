@@ -17,21 +17,14 @@ function Player(){
 	this.socket = null;
 }
 
-
-//Player.prototype.draw = function(ctx) {
-//		ctx.fillStyle = "#888888";
-//        ctx.fillRect(this.x-5, this.y-5, 10, 10);
-//    };
-	
-	
+/*
 Player.prototype.toDS = function() {
 	return {
 		__type: {stringValue: 'Player'},
 		x: {integerValue: this.x},
 		y: {integerValue: this.y},
 		dir: {integerValue: this.dir},
-		id: {stringValue: this.id},
-		moveAmount: {integerValue: this.moveAmount}
+		id: {stringValue: this.id}
 	};
 };
 Player.fromDS = function(data){
@@ -39,10 +32,9 @@ Player.fromDS = function(data){
 	ent.x = data.x.integerValue;
 	ent.y = data.y.integerValue;
 	ent.dir = data.dir.integerValue;
-	ent.moveAmount = data.moveAmount.integerValue;
 	return ent;
 }
-	
+*/	
 
 Entity.Types.Player = Player;
 
