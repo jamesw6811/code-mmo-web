@@ -9,6 +9,8 @@ function Entity(id) {
 	this.layer = 0;
     this.x = 0;
     this.y = 0;
+    this.vx = 0; // visual x-velocity per ms
+    this.vy = 0; // visual y-velocity per ms
     this.dir = 0;
     this.graphic = 0;
 }
@@ -24,6 +26,8 @@ Entity.prototype.getEmit = function(){
 Entity.prototype.updateFromEmit = function(data){
 	this.x = data.x;
 	this.y = data.y;
+    this.vx = data.vx; 
+    this.vy = data.vy; 
 	this.dir = data.dir;
 	this.graphic = data.graphic;
 	this.layer = data.layer;
@@ -32,6 +36,8 @@ Entity.makeFromEmit = function(data){
 	var ent = new Entity(data.id);
 	ent.x = data.x;
 	ent.y = data.y;
+    ent.vx = data.vx; 
+    ent.vy = data.vy; 
 	ent.dir = data.dir;
 	ent.graphic = data.graphic;
 	ent.layer = data.layer;
@@ -41,26 +47,6 @@ Entity.prototype.distanceSquaredTo = function(ent){
     var xdis = ent.x - this.x;
     var ydis = ent.y - this.y;
     return xdis*xdis+ydis*ydis;
-}
-
-
-Entity.prototype.toDS = function() {
-	return {
-		__type: {stringValue: 'Entity'},
-		x: {integerValue: this.x},
-		y: {integerValue: this.y},
-		id: {stringValue: this.id},
-		layer: {integerValue: this.layer},
-		graphic: {integerValue: this.graphic}
-	};
-};
-Entity.fromDS = function(data){
-	var ent = new Entity(data.id.stringValue);
-	ent.x = data.x.integerValue;
-	ent.y = data.y.integerValue;
-	ent.layer = data.layer.integerValue;
-	ent.graphic = data.graphic.integerValue;
-	return ent;
 }
 
 

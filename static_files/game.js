@@ -451,6 +451,9 @@ function update() {
   lasttimestamp = thistimestamp;
   thistimestamp = Date.now();
   timedelta = thistimestamp - lasttimestamp;
+  
+  doPhysics(timedelta);
+  
   // Update local player and check for change
   if (updateKeys(keys)) {
     // Send local player data to the game server
@@ -461,6 +464,17 @@ function update() {
     });
     var playerSprite = sprites[localPlayer.id];
     setSpriteLocation(playerSprite, localPlayer);
+  }
+}
+
+function doPhysics(timedelta){
+  for (var i = 0; i < entities.length; i++) {
+    var ent = entities[i];
+    if(ent.vx!=0 || ent.vy!=0){
+      ent.x+=ent.vx*timedelta;
+      ent.y+=ent.vy*timedelta;
+      setSpriteLocation(sprites[ent.id], ent);
+    }
   }
 }
 
