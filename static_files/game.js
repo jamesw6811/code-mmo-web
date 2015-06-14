@@ -431,15 +431,21 @@ function setSpriteLocation(sprite, ent) {
  ** GAME UPDATE
  **************************************************/
 function onClickEntity(ent, event) {
+  var positionOffStage = event.data.getLocalPosition(stage);
+  var positionOffPlayer = event.data.getLocalPosition(sprites[localPlayer.id]);
+  //var positionInWorld = {x:positionOffPlayer.x+localPlayer.x, y:positionOffPlayer.y+localPlayer.y};
+  var positionInWorld = {x:positionOffStage.x, y:positionOffStage.y};
   socket.emit("player primary action", {
     id: ent.id,
-    x: event.x,
-    y: event.y,
+    x: positionInWorld.x,
+    y: positionInWorld.y,
     actionid: selectedAction
   });
   console.log("Clicked on:");
   console.log(ent);
   console.log(event);
+  console.log(positionOffPlayer);
+  console.log(positionInWorld);
   console.log("action:" + selectedAction);
 }
 
