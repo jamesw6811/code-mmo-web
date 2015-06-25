@@ -20,6 +20,10 @@ threadsafe: no
 
 
 handlers:
+- url: /webgl
+  static_dir: static_files/webglclient
+  login: required
+
 - url: /favicon\.ico
   static_files: static_files/favicon.ico
   upload: static_files/favicon\.ico

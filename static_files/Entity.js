@@ -22,16 +22,18 @@ Entity.nextid = 0;
 
 Entity.prototype.getEmit = function(){
 	return {id: this.id, x: this.x, y: this.y, dir: this.dir, graphic: this.graphic, layer: this.layer};
-}
+};
 Entity.prototype.updateFromEmit = function(data){
-	this.x = data.x;
-	this.y = data.y;
+	if (this.vx==0 && this.vy==0){
+		this.x = data.x;
+		this.y = data.y;
+	}
     this.vx = data.vx; 
     this.vy = data.vy; 
 	this.dir = data.dir;
 	this.graphic = data.graphic;
 	this.layer = data.layer;
-}
+};
 Entity.makeFromEmit = function(data){
 	var ent = new Entity(data.id);
 	ent.x = data.x;
