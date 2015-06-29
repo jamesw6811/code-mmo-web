@@ -283,9 +283,11 @@ class InstanceUpdateHandler(webapp2.RequestHandler):
   def post(self):
     # TODO: Secure this URL by using Cloud Endpoints.
     name = self.request.get('name')
-    instance = ComputeEngineController().GetInstanceInfo(name)
-    if not instance:
-      return
+    
+    # TODO: Figure out credentials issues with below, likely due to ComputeEngineController credentials expiring
+    #instance = ComputeEngineController().GetInstanceInfo(name)
+    #if not instance:
+    #  return
     
     load = int(self.request.get('load'))
     logging.info('Instance update received: ' + str(instance) + ' with load: ' + str(load))
