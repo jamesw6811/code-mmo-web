@@ -9,7 +9,7 @@ CODEMMO_HOME=code-mmo
 #    gritsgame/src/games-server/main.js
 # Start game.
 sudo apt-get update
-sudo apt-get install git -y
+sudo apt-get install git build-essential -y
 sudo echo "-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEArXb3yIeL1Qdq59QYDdejnN3yrKN9t9wDPhVit7mU0haIxPrs
 uu1gMoxW70WersPBDaHUk0VmSRxwpORvDUKeg+TxxphC5I2OLbNpupGZq5rRhr+o
@@ -47,5 +47,5 @@ sudo ssh-agent bash -c 'ssh-add id_rsa; git clone git@github.com:jamesw6811/code
 sudo apt-get install nodejs -y
 sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
 sudo curl -L https://www.npmjs.org/install.sh | sh
-sudo npm install socket.io express body-parser moment multer crypto socket.io-client request googleapis@0.4.5
+sudo npm install socket.io express body-parser moment multer crypto socket.io-client request googleapis
 sudo node $CODEMMO_HOME/servermanager.js {{ name }} {{ apphostname }}
