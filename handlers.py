@@ -4,11 +4,11 @@ import os
 import jinja2
 import uuid
 import datetime
-from oauth2client.anyjson import simplejson as json
+import json
 from oauth2client.appengine import OAuth2Decorator
 from oauth2client.client import AccessTokenRefreshError
 from google.appengine.api import users
-import webapp2
+from google.appengine.ext import webapp
 
 from compute_engine_controller import ComputeEngineController
 from load_info import LoadInfo
@@ -45,7 +45,7 @@ class Entity(db.Model):
   gridkey = db.StringProperty()
   __type = db.StringProperty()
 
-class GamePageHandler(webapp2.RequestHandler):
+class GamePageHandler(webapp.RequestHandler):
   def get(self):
     user = users.get_current_user()
     
@@ -57,7 +57,7 @@ class GamePageHandler(webapp2.RequestHandler):
     
     self.response.out.write(resp)
 
-class FrontendHandler(webapp2.RequestHandler):
+class FrontendHandler(webapp.RequestHandler):
   """URL handler class for IP address request."""
 
   def get(self):
@@ -105,7 +105,7 @@ class FrontendHandler(webapp2.RequestHandler):
       self.response.out.write(json.dumps({'status':'loading'}))
 
 
-class AdminUiHandler(webapp2.RequestHandler):
+class AdminUiHandler(webapp.RequestHandler):
   """URL handler class for admin UI page."""
 
   @decorator.oauth_required
@@ -121,9 +121,8 @@ class AdminUiHandler(webapp2.RequestHandler):
       self.response.out.write(open(html_path).read())
     except AccessTokenRefreshError:
       self.redirect(decorator.authorize_url())
-
 '''
-class StatsJsonHandler(webapp2.RequestHandler):
+class StatsJsonHandler(webapp.RequestHandler):
   """URL handler class for stats list of the cluster."""
 
   @decorator.oauth_required
@@ -161,7 +160,7 @@ class StatsJsonHandler(webapp2.RequestHandler):
     self.response.out.write(json.dumps(load_entries))
 
 
-class StatsUserJsonHandler(webapp2.RequestHandler):
+class StatsUserJsonHandler(webapp.RequestHandler):
   """URL handler class for game server list of the cluster."""
 
   def get(self):
@@ -179,7 +178,7 @@ class StatsUserJsonHandler(webapp2.RequestHandler):
     self.response.out.write(json.dumps(load_entries))
 '''
 
-class StartUpHandler(webapp2.RequestHandler):
+class StartUpHandler(webapp.RequestHandler):
   """URL handler class for cluster start up."""
 
   @decorator.oauth_required
@@ -192,7 +191,7 @@ class StartUpHandler(webapp2.RequestHandler):
     ComputeEngineController(decorator.credentials).StartUpCluster()
 
 
-class TearDownHandler(webapp2.RequestHandler):
+class TearDownHandler(webapp.RequestHandler):
   """URL handler class for cluster shut down."""
 
   @decorator.oauth_required
@@ -202,7 +201,7 @@ class TearDownHandler(webapp2.RequestHandler):
     LoadInfo.RemoveAllInstancesAndServers()
 
 
-class RegisterInstanceHandler(webapp2.RequestHandler):
+class RegisterInstanceHandler(webapp.RequestHandler):
   """URL handler class for IP address registration of the instance."""
 
   def post(self):
@@ -225,7 +224,7 @@ class RegisterInstanceHandler(webapp2.RequestHandler):
         'name': name
         }))
         
-class RegisterServerHandler(webapp2.RequestHandler):
+class RegisterServerHandler(webapp.RequestHandler):
   def post(self):
     """ Adds the new server to server list by registering IP/port """
     # TODO(user): Secure this URL by using Cloud Endpoints
@@ -244,7 +243,7 @@ class RegisterServerHandler(webapp2.RequestHandler):
     resp = {'external_ip':external_ip, 'success':1}
     self.response.out.write(json.dumps(resp))
 
-class ShutdownHandler(webapp2.RequestHandler):
+class ShutdownHandler(webapp.RequestHandler):
   """URL handler class for deleting the instance."""
 
   def post(self):
@@ -254,7 +253,7 @@ class ShutdownHandler(webapp2.RequestHandler):
     ComputeEngineController().DeleteInstance(name)
     self.response.out.write(json.dumps({'success':1}));
     
-class ShutdownServerHandler(webapp2.RequestHandler):
+class ShutdownServerHandler(webapp.RequestHandler):
   
   def post(self):
     # TODO(user): Secure this URL by using Cloud Endpoints.
@@ -262,7 +261,7 @@ class ShutdownServerHandler(webapp2.RequestHandler):
     ComputeEngineController().RemoveServer(grid)
     self.response.out.write(json.dumps({'success':1}))
 
-class RequireServerHandler(webapp2.RequestHandler):
+class RequireServerHandler(webapp.RequestHandler):
   """ Respond with information to connect to requested server or notify of loading status. 
   Bring server up if required. """
   
@@ -278,7 +277,7 @@ class RequireServerHandler(webapp2.RequestHandler):
       loadresp = {LoadInfo.STATUS:LoadInfo.STATUS_LOADING}
     self.response.out.write(json.dumps(loadresp))
     
-class InstanceUpdateHandler(webapp2.RequestHandler):
+class InstanceUpdateHandler(webapp.RequestHandler):
   """ Accept updates from instance server manager """
   def post(self):
     # TODO: Secure this URL by using Cloud Endpoints.
@@ -295,7 +294,7 @@ class InstanceUpdateHandler(webapp2.RequestHandler):
     
     self.response.out.write(json.dumps({"loadresp":loadresp}))
 
-class ServerUpdateHandler(webapp2.RequestHandler):
+class ServerUpdateHandler(webapp.RequestHandler):
   """ Accept updates from servers """
   def post(self):
     # TODO: Secure this URL by using Cloud Endpoints.
@@ -307,7 +306,7 @@ class ServerUpdateHandler(webapp2.RequestHandler):
     
     self.response.out.write(json.dumps({"loadresp":loadresp}))
 
-class HeartbeatHandler(webapp2.RequestHandler):
+class HeartbeatHandler(webapp.RequestHandler):
   """URL handler class to perform cron task."""
 
   def get(self):
@@ -332,7 +331,7 @@ class HeartbeatHandler(webapp2.RequestHandler):
 
 
 
-app = webapp2.WSGIApplication(
+app = webapp.WSGIApplication(
     [
         ('/game', GamePageHandler),
         ('/getip.json', FrontendHandler),

@@ -47,5 +47,5 @@ sudo ssh-agent bash -c 'ssh-add id_rsa; git clone git@github.com:jamesw6811/code
 sudo apt-get install nodejs -y
 sudo update-alternatives --install /usr/bin/node nodejs /usr/bin/nodejs 100
 sudo curl -L https://www.npmjs.org/install.sh | sh
-sudo npm install socket.io express body-parser moment multer crypto socket.io-client request googleapis
+sudo npm install socket.io express body-parser moment multer crypto socket.io-client request googleapis@0.4.5
 sudo node $CODEMMO_HOME/servermanager.js {{ name }} {{ apphostname }}
