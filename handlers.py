@@ -290,7 +290,7 @@ class InstanceUpdateHandler(webapp2.RequestHandler):
     #  return
     
     load = int(self.request.get('load'))
-    logging.info('Instance update received: ' + str(instance) + ' with load: ' + str(load))
+    logging.info('Instance update received: ' + str(name) + ' with load: ' + str(load))
     loadresp = LoadInfo.UpdateInstanceLoadInfo(name, load)
     
     self.response.out.write(json.dumps({"loadresp":loadresp}))

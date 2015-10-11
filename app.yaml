@@ -47,6 +47,7 @@ handlers:
 - url: /(startup|teardown|stats|heartbeat)
   script: handlers.app
   login: admin
+  secure: always
   
 - url: /game
   script: handlers.app
