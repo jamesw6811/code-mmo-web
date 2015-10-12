@@ -23,6 +23,7 @@ handlers:
 - url: /webgl
   static_dir: static_files/webglclient
   login: required
+  secure: never
 
 - url: /favicon\.ico
   static_files: static_files/favicon.ico
